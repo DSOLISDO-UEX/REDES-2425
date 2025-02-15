@@ -75,7 +75,7 @@ void Adapter::openFromAvailable()
     }
 
     open(chosenAdapter->name);
-    std::cout << "Chosed " << chosenAdapter->name << std::endl;
+    std::cout << "Chosen " << chosenAdapter->name << std::endl;
 }
 
 std::string Adapter::getMac()
