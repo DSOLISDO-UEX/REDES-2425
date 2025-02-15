@@ -10,23 +10,13 @@ bool Adapter::close()
     return CloseAdapter(&m_selectedInterface) == 0;
 }
 
-bool Adapter::open(const std::string &adapterName)
+bool Adapter::open(const char* adapterName)
 {
-    bool ret = setDeviceName(&m_selectedInterface, (char*)adapterName.data()) == 0;
+    bool ret = setDeviceName(&m_selectedInterface, (char*)adapterName) == 0;
     ret &= GetMACAdapter(&m_selectedInterface) == 0;
-    ret &= OpenAdapter(&m_selectedInterface);
+    ret &= OpenAdapter(&m_selectedInterface) == 0;
 
     return ret;
-}
-
-unsigned char * Adapter::buildFrame(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol, unsigned char *payload)
-{
-    return BuildFrame(srcMAC, dstMAC, protocol, payload);
-}
-
-unsigned char * Adapter::buildFrameHeader(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol)
-{
-    return BuildHeader(srcMAC, dstMAC, protocol);
 }
 
 int Adapter::sendFrame(unsigned char *p, int payloadSize)
@@ -57,6 +47,13 @@ void Adapter::openFromAvailable()
         
     }
 
+    if (i == 0)
+    {
+        // If i is 0 then it means the loop before didn't execute.
+        std::cout << "There isn't any adapter available!" << std::endl;
+        return;
+    }
+
     pcap_if_t *chosenAdapter = GetAdapters();
     size_t chosenId = SIZE_MAX;
 
@@ -64,10 +61,17 @@ void Adapter::openFromAvailable()
     std::cin >> chosenId;
 
     i = 0;
-    while(i != chosenId)
+    while(i != chosenId && chosenAdapter != nullptr)
     {
         chosenAdapter = chosenAdapter->next;
         i++;
+    }
+
+    if (i != chosenId)
+    {
+        // If loop ended and i != chosenId, some adapters stopped working (or were disconnected) after printin them.
+        std::cout << "Could not find selected adapter, was it disconnected?" << std::endl;
+        return;
     }
 
     open(chosenAdapter->name);
@@ -79,6 +83,10 @@ std::string Adapter::getMac()
     std::stringstream stream;
     for (size_t i = 0; i < 6; i++)
     {
+        /*
+         * This formats HEX numbers adding a 0 on the left when they are just 1 digit ->
+         * 9 (hex) -> 09 (hex); A (hex) -> 0A (hex)
+         */
         stream << std::setfill('0') << std::setw(2) << std::hex << int(m_selectedInterface.MACaddr[i]);
 
         if (i < 5)

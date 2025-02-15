@@ -7,18 +7,19 @@
 #include <sstream>
 #include "linkLayer.h"
 
-// TODO: Move frame stuff to a self-contained class.
-
 /**
  * This class exists merely to stablish a bridge between C (LinkLayer) and C++ so the rest of the 
  * project can be coded in C++ without ever knowing the implementation behind Adapter.
+ * 
+ * interface_t does not have its own class because it only contains information. It doesn't have 
+ * any module directly associated with it that aren't relationated with Adapter.
  */
 class Adapter
 {
     public:
     /**
      * Tries to read a packet received by the adapter.
-     * @return An assembled packet.
+     * @return The received assembled packet.
      */
     apacket_t receiveFrame();
 
@@ -31,30 +32,12 @@ class Adapter
     /**
      * Opens the adapter that matches the given name and returns true if succeeded.
      * @param adapterName The name of the adapter that should be opened.
-     * @return True if adapter could be selected.
+     * @return True if adapter could be opened.
      */
-    bool open(const std::string &adapterName);
+    bool open(const char* adapterName);
 
     /** 
-     * Builds a frame with the given information and payload.
-     * @param srcMac MAC of the source device.
-     * @param dstMac MAC of the destination device.
-     * @param protocol Protocol for the frame.
-     * @param payload Data that will be in the frame.
-     * @return Data of the generated frame.
-     */
-    unsigned char * buildFrame(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol, unsigned char *payload);
-
-    /** 
-     * Builds the header of the frame.
-     * @param srcMac MAC of the source device.
-     * @param dstMac MAC of the destination device.
-     * @param protocol Protocol for the frame.
-     * @return Data of the generated header.
-     */
-    unsigned char * buildFrameHeader(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol);
-
-    /** 
+     * Important!! To build a frame use FrameBuilder! This function only needs getBody || getHeader and their corresponding size.
      * @param p Payload data.
      * @param payloadSize Payload data size.
      * @return Returns something != -1 if no error.
@@ -73,7 +56,7 @@ class Adapter
     void freeFrameBuffer();
 
     /** 
-     * Opens the chosen adapter. It will print all available adapters and will ask the user to chose one.
+     * Opens the chosen adapter. It will print all available adapters and will ask the user to choose one.
      */
     void openFromAvailable();
 
