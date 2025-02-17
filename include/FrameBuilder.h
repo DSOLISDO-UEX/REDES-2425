@@ -1,6 +1,7 @@
 #ifndef FRAME_BUILDER_H
 #define FRAME_BUILDER_H
 
+#include <iostream>
 #include "linkLayer.h"
 
 /**
@@ -51,8 +52,9 @@ public:
     unsigned char* getHeader();
 
 private:
-    unsigned char* m_body; // Body of the frame.
-    unsigned char* m_header; // Header of the frame.
+    size_t m_payloadSize{0};
+    unsigned char* m_body{nullptr}; // Body of the frame.
+    unsigned char* m_header{nullptr}; // Header of the frame.
 };
 
 #endif
