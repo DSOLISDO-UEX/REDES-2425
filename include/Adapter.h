@@ -40,9 +40,9 @@ class Adapter
      * Important!! To build a frame use FrameBuilder! This function only needs getBody || getHeader and their corresponding size.
      * @param p Payload data.
      * @param payloadSize Payload data size.
-     * @return Returns something != -1 if no error.
+     * @return Returns true if there wasn't any errors while sending the frame..
      */
-    int sendFrame(unsigned char *p, int payloadSize);
+    bool sendFrame(unsigned char *p, int payloadSize);
 
     /**
      * Returns a list to every adapter found for this device.
@@ -57,8 +57,9 @@ class Adapter
 
     /** 
      * Opens the chosen adapter. It will print all available adapters and will ask the user to choose one.
+     * @return True if 1 iface was opened.
      */
-    void openFromAvailable();
+    bool openFromAvailable();
 
     /**
      * Returns the mac for the selected interfaces. If it was not selected it will return an empty string.
