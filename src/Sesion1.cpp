@@ -9,7 +9,7 @@
 #include "../include/Adapter.h"
 
 
-int main()
+int mainSesion1()
 {
     Adapter adp;
     adp.openFromAvailable();  
