@@ -34,20 +34,50 @@ int main()
     std::cin >> word; // Ask for a word.
 
     FrameBuilder builder;
-    if (!builder.buildFrame(srcMac, dstMac, type, (unsigned char*)word.data()))
+    if (!builder.buildFrame(srcMac, dstMac, type, (unsigned char *)word.data()))
     {
-      std::cout << "Could not build frame!" << std::endl;
-      return 1;
+        std::cout << "Could not build frame!" << std::endl;
+        return 1;
     }
 
-    if (!adp.sendFrame((unsigned char*)builder.getBody(), builder.getBodySize()))
+    if (!adp.sendFrame((unsigned char *)builder.getBody(), builder.getBodySize()))
     {
-      std::cout << "Could not send packet" << std::endl;
-      return 1;
+        std::cout << "Could not send packet" << std::endl;
+        return 1;
     }
 
     std::cout << "Packet sent" << std::endl;
-    adp.close();
+    // adp.close();
 
+    // RECEIVE
+    std::cout << "Waiting to receive a packet..." << std::endl;
+
+    apacket_t receivedPacket{};
+    while (receivedPacket.packet == nullptr)
+    {
+        receivedPacket = adp.receiveFrame();
+
+        if (receivedPacket.packet != nullptr)
+        {
+
+            std::stringstream stream;
+            for (size_t i = 0; i < 6; i++)
+            {
+                /*
+                 * This formats HEX numbers adding a 0 on the left when they are just 1 digit ->
+                 * 9 (hex) -> 09 (hex); A (hex) -> 0A (hex)
+                 */
+                stream << std::setfill('0') << std::setw(2) << std::hex << int(receivedPacket.packet[i]);
+
+                if (i < 5)
+                {
+                    stream << ":";
+                }
+            }
+
+            std::cout << "Packet received DST MAC " << stream.str() << std::endl;
+            return 0;
+        }
+    }
     return 0;
 }
