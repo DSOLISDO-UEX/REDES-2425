@@ -30,7 +30,6 @@ int main()
 
     std::cout << "Selected interface MAC:" << adp.getMac() << std::endl;
     bool working = true;
-    bool sender = false;
 
     while (working)
     {
@@ -62,24 +61,17 @@ int main()
             }
 
             std::cout << "Packet sent" << std::endl;
-            sender = true;
         }
 
         // RECEIVE
+        apacket_t receivedPacket{};
+        receivedPacket = adp.receiveFrame();
 
-        if (!sender)
+        if (receivedPacket.packet != nullptr)
         {
-            apacket_t receivedPacket{};
-            receivedPacket = adp.receiveFrame();
 
-            if (receivedPacket.packet != nullptr)
-            {
-
-                std::cout << "Packet received: " << *(char *)(receivedPacket.packet + 14) << std::endl;
-            }
+            std::cout << "Packet received: " << *(char *)(receivedPacket.packet + 14) << std::endl;
         }
-        
-        sender = false;
         std::this_thread::yield();
     }
 
