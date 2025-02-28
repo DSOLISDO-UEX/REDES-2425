@@ -9,8 +9,7 @@
 
 int main()
 {
-    std::string word;
-    unsigned char srcMac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    char ch[2] = {'\x00', '\x00'};
     unsigned char dstMac[6] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
     unsigned char type[2] = {0x30, 0x00};
 
@@ -21,34 +20,38 @@ int main()
     printf("----------------------------\n");
 
     Adapter adp;
-
     if (!adp.openFromAvailable())
     {
         std::cout << "Could not select an adapter!" << std::endl;
         return 1;
     }
 
-    std::cout << "Selected interface MAC:" << adp.getMac() << std::endl;
-    bool working = true;
+    std::cout << "Source MAC: " << adp.getMacAsStr(adp.getAdapterMac()) << std::endl;
+    std::cout << "Destination MAC:" << adp.getMacAsStr(dstMac) << std::endl;
 
+    bool working = true;
     while (working)
     {
-        word = "";
         if (kbhit() == 1)
         {
-            word += getch();
+            ch[0] = getch();
+            std::cout << std::endl; // Ensure newline after writing a character.
         }
 
-        if (word == "c")
+        if (ch[0] == 27)
         {
             working = false;
-            break;
+            std::cout << "Exiting..." << std::endl;
+
+            continue; // Next iteration should skip the WHILE.
         }
 
-        if (word != "")
+        // SEND
+        if (ch[0] != '\x00')
         {
+            // There's a character pending to be sent.
             FrameBuilder builder;
-            if (!builder.buildFrame(srcMac, dstMac, type, (unsigned char *)word.data()))
+            if (!builder.buildFrame(adp.getAdapterMac(), dstMac, type, (unsigned char *)ch))
             {
                 std::cout << "Could not build frame!" << std::endl;
                 return 1;
@@ -60,7 +63,8 @@ int main()
                 return 1;
             }
 
-            std::cout << "Packet sent" << std::endl;
+            ch[0] = '\x00';                          // Reset character.
+            std::cout << "Packet sent" << std::endl; // Log
         }
 
         // RECEIVE
@@ -69,10 +73,14 @@ int main()
 
         if (receivedPacket.packet != nullptr)
         {
-
-            std::cout << "Packet received: " << *(char *)(receivedPacket.packet + 14) << std::endl;
+            unsigned char *packetContent = (unsigned char *)(receivedPacket.packet + 14); // srcMac + dstMac + protocol
+            std::cout << "Received packet length: " << strlen((const char *)packetContent) << std::endl;
+            std::cout << "Packet received: " << *packetContent << std::endl;
         }
-        std::this_thread::yield();
+
+        std::this_thread::yield(); /* 
+                                    * Ensure this thread doesn't keep running on CPU without letting other threads execute.
+                                    */
     }
 
     adp.close();

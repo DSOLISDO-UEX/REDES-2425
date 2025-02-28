@@ -1,22 +1,22 @@
 #ifndef ADAPTER_H
 #define ADAPTER_H
 
+#include "linkLayer.h"
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "linkLayer.h"
 
 /**
- * This class exists merely to stablish a bridge between C (LinkLayer) and C++ so the rest of the 
+ * This class exists merely to stablish a bridge between C (LinkLayer) and C++ so the rest of the
  * project can be coded in C++ without ever knowing the implementation behind Adapter.
- * 
- * interface_t does not have its own class because it only contains information. It doesn't have 
+ *
+ * interface_t does not have its own class because it only contains information. It doesn't have
  * any module directly associated with it that aren't relationated with Adapter.
  */
 class Adapter
 {
-    public:
+  public:
     /**
      * Tries to read a packet received by the adapter.
      * @return The received assembled packet.
@@ -34,10 +34,17 @@ class Adapter
      * @param adapterName The name of the adapter that should be opened.
      * @return True if adapter could be opened.
      */
-    bool open(const char* adapterName);
+    bool open(const char *adapterName);
 
-    /** 
-     * Important!! To build a frame use FrameBuilder! This function only needs getBody || getHeader and their corresponding size.
+    /**
+     * Opens the chosen adapter. It will print all available adapters and will ask the user to choose one.
+     * @return True if 1 iface was opened.
+     */
+    bool openFromAvailable();
+
+    /**
+     * Important!! To build a frame use FrameBuilder! This function only needs getBody || getHeader and their
+     * corresponding size.
      * @param p Payload data.
      * @param payloadSize Payload data size.
      * @return Returns true if there wasn't any errors while sending the frame..
@@ -50,25 +57,27 @@ class Adapter
      */
     pcap_if_t *GetAdapters();
 
-    /** 
-     * Frees the frame buffer for the current selected adapter. 
+    /**
+     * Returns a buffer of 6 bytes with the MAC of the selected adapter. An adapter must have been
+     * chosed previously for this to return something != nullptr.
+     * @return MAC address of the selected adapter.
+     */
+    unsigned char* getAdapterMac();
+
+    /**
+     * Frees the frame buffer for the current selected adapter.
      */
     void freeFrameBuffer();
 
-    /** 
-     * Opens the chosen adapter. It will print all available adapters and will ask the user to choose one.
-     * @return True if 1 iface was opened.
-     */
-    bool openFromAvailable();
-
     /**
      * Returns the mac for the selected interfaces. If it was not selected it will return an empty string.
+     * @param macAddress An array of 6 bytes containing the MAC address.
      * @return A representation of the MAC in hex for ex: 10:45:8A:76:F0:00
      */
-    std::string getMac();
+    std::string getMacAsStr(unsigned char *macAddress);
 
-    private:
-        interface_t m_selectedInterface{}; // Selected interface
+  private:
+    interface_t m_selectedInterface{}; // Selected interface
 };
 
 #endif

@@ -33,21 +33,6 @@ bool Adapter::open(const char *adapterName)
     return true;
 }
 
-bool Adapter::sendFrame(unsigned char *p, int payloadSize)
-{
-    return SendFrame(&m_selectedInterface, p, payloadSize) == 0;
-}
-
-pcap_if_t *Adapter::GetAdapters()
-{
-    return GetAvailAdapters();
-}
-
-void Adapter::freeFrameBuffer()
-{
-    FreeBuffer();
-}
-
 bool Adapter::openFromAvailable()
 {
     pcap_if_t *current = GetAdapters();
@@ -94,7 +79,27 @@ bool Adapter::openFromAvailable()
     return true;
 }
 
-std::string Adapter::getMac()
+bool Adapter::sendFrame(unsigned char *p, int payloadSize)
+{
+    return SendFrame(&m_selectedInterface, p, payloadSize) == 0;
+}
+
+pcap_if_t *Adapter::GetAdapters()
+{
+    return GetAvailAdapters();
+}
+
+unsigned char* Adapter::getAdapterMac()
+{
+    return m_selectedInterface.MACaddr;
+}
+
+void Adapter::freeFrameBuffer()
+{
+    FreeBuffer();
+}
+
+std::string Adapter::getMacAsStr(unsigned char* macAddress)
 {
     std::stringstream stream;
     for (size_t i = 0; i < 6; i++)
@@ -103,7 +108,7 @@ std::string Adapter::getMac()
          * This formats HEX numbers adding a 0 on the left when they are just 1 digit ->
          * 9 (hex) -> 09 (hex); A (hex) -> 0A (hex)
          */
-        stream << std::setfill('0') << std::setw(2) << std::hex << int(m_selectedInterface.MACaddr[i]);
+        stream << std::setfill('0') << std::setw(2) << std::hex << int(macAddress[i]);
 
         if (i < 5)
         {
