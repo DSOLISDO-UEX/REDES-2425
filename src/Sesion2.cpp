@@ -29,6 +29,8 @@ int main()
     std::cout << "Source MAC: " << adp.getMacAsStr(adp.getAdapterMac()) << std::endl;
     std::cout << "Destination MAC:" << adp.getMacAsStr(dstMac) << std::endl;
 
+    std::cin.ignore(); // Remove content from input buffer.
+
     bool working = true;
     while (working)
     {
