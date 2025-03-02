@@ -45,7 +45,7 @@ int main()
             working = false;
             std::cout << "Exiting..." << std::endl;
 
-            continue; // Next iteration should skip the WHILE.
+            continue; // Next iteration will exit the WHILE.
         }
 
         // SEND
