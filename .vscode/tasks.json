@@ -7,6 +7,7 @@
             "args": [
                 "-g",
                 "${workspaceFolder}/src/Adapter.cpp",
+                "${workspaceFolder}/src/Communication.cpp",
                 "${workspaceFolder}/src/FrameBuilder.cpp",
                 "${workspaceFolder}/src/Sesion3.cpp",
                 "${workspaceFolder}/src/linkLayer.a",
