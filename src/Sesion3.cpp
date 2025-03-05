@@ -1,25 +1,22 @@
 //============================================================================
 // ----------- PRACTICAS DE FUNDAMENTOS DE REDES DE COMUNICACIONES -----------
 // ---------------------------- CURSO 2024/25 --------------------------------
-// ----------------------------- SESION2.CPP ---------------------------------
+// ----------------------------- SESION3.CPP ---------------------------------
 //============================================================================
 #include "../include/Adapter.h"
-#include "../include/FrameBuilder.h"
+#include "../include/Communication.h"
 #include <thread>
 
 int main()
 {
-    char ch[2] = {'\x00', '\x00'};
-    unsigned char dstMac[6] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
-    unsigned char type[2] = {0x30, 0x00};
-
-    interface_t iface;
-
     printf("\n----------------------------\n");
-    printf("------ SESION 2 - FRC ------\n");
+    printf("------ SESION 3 - FRC ------\n");
     printf("----------------------------\n");
 
     Adapter adp;
+    interface_t iface;
+    int groupNum = 0, stationMode = 0;
+
     if (!adp.openFromAvailable())
     {
         std::cout << "Could not select an adapter!" << std::endl;
@@ -27,62 +24,35 @@ int main()
     }
 
     std::cout << "Source MAC: " << adp.getMacAsStr(adp.getAdapterMac()) << std::endl;
-    std::cout << "Destination MAC:" << adp.getMacAsStr(dstMac) << std::endl;
+    
+    std::cout << "Enter group number: " << std::endl;
+    std::cin >> groupNum;
 
-    std::cin.ignore(); // Remove content from input buffer.
+    Communication communication(&adp, groupNum);
 
-    bool working = true;
-    while (working)
+    std::cout << "Select station" << std::endl;
+    std::cout << "[1] Mode slave" << std::endl;
+    std::cout << "[2] Mode master" << std::endl;
+
+    std::cin >> stationMode;
+    switch(stationMode)
     {
-        if (kbhit() == 1)
+        case 1: // Slave
         {
-            ch[0] = getch();
-            std::cout << std::endl; // Ensure newline after writing a character.
+            communication.listenForMaster();
+            break;
+        }
+        case 2: // Master
+        {
+            communication.discoverSlave();
+            break;
         }
 
-        if (ch[0] == 27)
+        default:
         {
-            working = false;
-            std::cout << "Exiting..." << std::endl;
-
-            continue; // Next iteration will exit the WHILE.
+            std::cout << "Invalid option!" << std::endl;
+            return 1;
         }
-
-        // SEND
-        if (ch[0] != '\x00')
-        {
-            // There's a character pending to be sent.
-            FrameBuilder builder;
-            if (!builder.buildFrame(adp.getAdapterMac(), dstMac, type, (unsigned char *)ch))
-            {
-                std::cout << "Could not build frame!" << std::endl;
-                return 1;
-            }
-
-            if (!adp.sendFrame((unsigned char *)builder.getBody(), builder.getBodySize()))
-            {
-                std::cout << "Could not send packet" << std::endl;
-                return 1;
-            }
-
-            ch[0] = '\x00';                          // Reset character.
-            std::cout << "Packet sent" << std::endl; // Log
-        }
-
-        // RECEIVE
-        apacket_t receivedPacket{};
-        receivedPacket = adp.receiveFrame();
-
-        if (receivedPacket.packet != nullptr)
-        {
-            unsigned char *packetContent = (unsigned char *)(receivedPacket.packet + 14); // srcMac + dstMac + protocol
-            std::cout << "Received packet length: " << strlen((const char *)packetContent) << std::endl;
-            std::cout << "Packet received: " << *packetContent << std::endl;
-        }
-
-        std::this_thread::yield(); /* 
-                                    * Ensure this thread doesn't keep running on CPU without letting other threads execute.
-                                    */
     }
 
     adp.close();
