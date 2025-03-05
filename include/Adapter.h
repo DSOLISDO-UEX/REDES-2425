@@ -49,7 +49,7 @@ class Adapter
      * @param payloadSize Payload data size.
      * @return Returns true if there wasn't any errors while sending the frame..
      */
-    bool sendFrame(unsigned char *p, int payloadSize);
+    bool sendFrame(char *p, size_t payloadSize);
 
     /**
      * Returns a list to every adapter found for this device.
@@ -62,7 +62,7 @@ class Adapter
      * chosed previously for this to return something != nullptr.
      * @return MAC address of the selected adapter.
      */
-    unsigned char* getAdapterMac();
+    char* getAdapterMac();
 
     /**
      * Frees the frame buffer for the current selected adapter.
@@ -74,7 +74,7 @@ class Adapter
      * @param macAddress An array of 6 bytes containing the MAC address.
      * @return A representation of the MAC in hex for ex: 10:45:8A:76:F0:00
      */
-    std::string getMacAsStr(unsigned char *macAddress);
+    std::string getMacAsStr(char *macAddress);
 
   private:
     interface_t m_selectedInterface{}; // Selected interface
