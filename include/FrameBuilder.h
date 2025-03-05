@@ -1,16 +1,16 @@
 #ifndef FRAME_BUILDER_H
 #define FRAME_BUILDER_H
 
-#include <iostream>
 #include "linkLayer.h"
+#include <iostream>
 
 /**
  * Like Adapter, this class is a bridge between C (LinkLayer) and C++.
  */
 class FrameBuilder
 {
-public:
-    /** 
+  public:
+    /**
      * Builds a frame with the given information and payload.
      * @param srcMac MAC of the source device.
      * @param dstMac MAC of the destination device.
@@ -18,43 +18,36 @@ public:
      * @param payload Data that will be in the frame.
      * @return True if there wasn't any error.
      */
-    bool buildFrame(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol, unsigned char *payload);
+    bool buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload);
 
-    /** 
+    /**
      * Builds the header of the frame.
      * @param srcMac MAC of the source device.
      * @param dstMac MAC of the destination device.
      * @param protocol Protocol for the frame.
      * @return True if there wasn't any error.
      */
-    bool buildFrameHeader(unsigned char *srcMAC, unsigned char *dstMAC, unsigned char* protocol);
+    bool buildEmptyFrame(char srcMAC[6], char dstMAC[6], char protocol[2]);
 
     /**
-     * @return The size of the body (it uses strlen). TODO Change this, at the momment teachers have 
-     * not mentioned how to get the size of a frame. 
+     * @return The size of the body of the frame.
      */
     size_t getBodySize();
 
     /**
-     * @return The size of the header (it uses strlen). TODO Change this, at the momment teachers have 
-     * not mentioned how to get the size of a header. 
+     * @return The size of the data that's inside the body of the frame.
      */
-    size_t getHeaderSize();
+    size_t getDataSize();
 
     /**
      * @return Returns the body of the frame (unsigned char*).
      */
-    unsigned char* getBody();
+    char *getBody();
 
-    /**
-     * @return Returns the header of the frame (unsigned char*).
-     */
-    unsigned char* getHeader();
-
-private:
-    size_t m_payloadSize{0};
-    unsigned char* m_body{nullptr}; // Body of the frame.
-    unsigned char* m_header{nullptr}; // Header of the frame.
+  private:
+    size_t m_bodySize{0};  // Size of the body of the frame (header + dataSize)
+    size_t m_dataSize{0};  // Size of the data sent with frame's body.
+    char *m_body{nullptr}; // Body of the frame.
 };
 
 #endif
