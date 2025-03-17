@@ -220,81 +220,118 @@ std::string Communication::read()
 
 void Communication::masterDoing()
 {
-    char stationMode;
+    std::cin.ignore(); // Ensure input buffer is clean.
+    bool sendCharacters = false;
+    std::string received;
+    char expectedProtocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::Common)};
 
+    std::cout << "Initializating master loop" << std::endl;
+
+    // Menu
     std::cout << "Mode selection: " << std::endl;
     std::cout << "[F1] - Interactive character sending" << std::endl;
     std::cout << "[F2] - Sending of a file" << std::endl;
     std::cout << "[ESC] - Exit" << std::endl;
 
-    std::cin >> stationMode; //Hace falta?
-
-    stationMode = getch();
-
-    if (stationMode == 'O')
+    while (true)
     {
-
-        stationMode = getch();
-
-        switch (stationMode)
+        // Check input for menu
+        if (kbhit())
         {
-        case 'P': // F1
+            // User hit a key.
+            char ch[2] = {0, 0};
+            ch[0] = char(getch()); // Ensure this is a valid null-terminated string that can be passed straight to
+                                   // out write function.
 
-            char ch[2] = {'\x00', '\x00'};
-
-            std::cin.ignore(); // Remove content from input buffer.
-
-            bool working = true;
-            while (working)
+            if (ch[0] == 'O' && !sendCharacters)
             {
-                if (kbhit() == 1)
+                // User hit FN key, check which FX was hit.
+                char functionKey = getch();
+                switch (functionKey)
                 {
-                    ch[0] = getch();
-                    std::cout << std::endl; // Ensure newline after writing a character.
-                }
-
-                if (ch[0] == 27)
+                case 'P': // F1 ------------------------------------------------------------
                 {
-                    working = false;
-                    std::cout << "Exiting..." << std::endl;
-
-                    continue; // Next iteration will exit the WHILE.
-                }
-
-                // SEND
-                if (ch[0] != '\x00')
-                {
-                    if (!write(m_destinationMac, 0, ch))
+                    bool working = true;
+                    while (working)
                     {
-                        return;
+
+                    received = read();
+
+                    if (!received.empty())
+                    {
+                        // There's data to read. Check if it's for us.
+                        std::cout << "Received packet, checking if it's ours" << std::endl;
+            
+                        char *receivedTypeStart = (char *)(received.data() + 12);
+                        char *receivedDataStart = (char *)(received.data() + 14);
+                        // Pointer to the start of the received packet protocol type.
+            
+                        if (receivedTypeStart[0] == expectedProtocolType[0] && receivedTypeStart[2] == expectedProtocolType[2])
+                        {
+                            std::cout << "Received packet is from slave" << std::endl;
+                            // Packet is from slave. Show it. Data gets a copy of the packet data.
+                            // .size() returns the size of the BUFFER not the string length. Use recommended on the C++ standard to
+                            // work with raw memory bytes.
+                            std::string data = std::string(receivedDataStart, received.size() - 14);
+                            std::cout << "Received: " << data << std::endl;
+                        }
                     }
+
+                    std::cout << "Master is ready to send data to slave" << std::endl;
+                    char ch[2] = {'\x00', '\x00'};
+
+                    std::cin.ignore(); // Remove content from input buffer.
+
+                    
+                        if (kbhit() == 1)
+                        {
+                            ch[0] = getch();
+                            std::cout << std::endl; // Ensure newline after writing a character.
+                        }
+
+                        if (ch[0] == 27)
+                        {
+                            working = false;
+                            std::cout << "Exiting..." << std::endl;
+
+                            continue; // Next iteration will exit the WHILE.
+                        }
+
+                        // SEND
+                        if (ch[0] != '\x00')
+                        {
+                            if (!write(m_destinationMac, 0, ch))
+                            {
+                                return;
+                            }
+                        }
+
+                    }
+                    break;
+                    
                 }
+                case 'Q': {
+                    std::cout << "Master is ready to send a file to slave" << std::endl;
 
-                // RECEIVE
-                std::cout << read() << std::endl;
-
-                std::this_thread::yield(); /*
-                                            * Ensure this thread doesn't keep running on CPU without letting other
-                                            * threads execute.
-                                            */
+                    break;
+                }
+                }
             }
-
-            break;
-
-        case 'Q': // F2
-
-            break;
-
-        case 'R': // F3--Nada
-
-            break;
-
-        case 'S': // F4--Nada
-
-            break;
-
-        default:
-            break;
+            else if (ch[0] == 27)
+            {
+                // ESC
+                std::cout << "Exitting..." << std::endl;
+                return; // Exit loop.
+            }
+            else if (sendCharacters)
+            {
+                // After selecting F1, user pressed a key that is not exit. Character must be sent.
+                if (!write(m_destinationMac, expectedProtocolType, ch))
+                {
+                    std::cout << "Error while sending character, aborting..." << std::endl;
+                    return;
+                }
+            }
         }
     }
 }
