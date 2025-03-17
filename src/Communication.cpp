@@ -14,9 +14,8 @@ Communication::~Communication()
 
 bool Communication::discoverSlave()
 {
-    // Build the packet.
-    char destinationMac[6] = {char(0xFF), char(0xFF), char(0xFF), char(0xFF),
-                              char(0xFF), char(0xFF)}; // MAC used to send the packet to all the devices of the network.
+    // MAC used to send the packet to all the devices of the network.
+    char destinationMac[6] = {char(0xFF), char(0xFF), char(0xFF), char(0xFF), char(0xFF), char(0xFF)};
     char protocolType[2] = {char(0x30 + m_groupNumber), static_cast<char>(PacketType::AskForSlave)};
 
     if (!write(destinationMac, protocolType, nullptr))
@@ -32,8 +31,8 @@ bool Communication::discoverSlave()
 
         std::cout << "Received packet when discovering, checking if it's from a slave" << std::endl;
 
-        char *receivedTypeStart =
-            (char *)(received.data() + 12); // Pointer to the start of the received packet protocol type.
+        // Pointer to the start of the received packet protocol type.
+        char *receivedTypeStart = (char *)(received.data() + 12);
 
         if (receivedTypeStart[0] == protocolType[0] &&
             receivedTypeStart[1] == static_cast<uint8_t>(PacketType::RepplyToMaster))
@@ -53,8 +52,8 @@ bool Communication::discoverSlave()
 
 bool Communication::listenForMaster()
 {
-    char protocolType[2] = {char(0x30 + m_groupNumber),
-                            static_cast<uint8_t>(PacketType::RepplyToMaster)}; // Initialized here for performace.
+    // Initialized here for performace.
+    char protocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::RepplyToMaster)};
     std::string received;
 
     while (true)
@@ -66,8 +65,8 @@ bool Communication::listenForMaster()
 
         std::cout << "Received packet when discovering, checking if it's from a master" << std::endl;
 
-        char *receivedTypeStart =
-            (char *)(received.data() + 12); // Pointer to the start of the received packet protocol type.
+        // Pointer to the start of the received packet protocol type.
+        char *receivedTypeStart = (char *)(received.data() + 12);
 
         if (receivedTypeStart[0] == protocolType[0] &&
             receivedTypeStart[1] == static_cast<uint8_t>(PacketType::AskForSlave))
@@ -92,7 +91,6 @@ bool Communication::listenForMaster()
 bool Communication::write(char destinationMac[6], char protocolType[2], char *data)
 {
     FrameBuilder builder;
-
     if (data)
     {
         if (!builder.buildFrame(m_sourceMac, destinationMac, protocolType, data))
@@ -118,6 +116,87 @@ bool Communication::write(char destinationMac[6], char protocolType[2], char *da
 
     std::cout << "Sent packet" << std::endl;
     return true;
+}
+
+void Communication::slaveLoop()
+{
+    std::cin.ignore(); // Ensure input buffer is clean.
+    std::cout << "Initializing slave loop" << std::endl;
+
+    // Show menu.
+    std::cout << "Chose working method: " << std::endl;
+    std::cout << "[F1] Sent characters interactively. " << std::endl;
+    std::cout << "[ESC] Exit." << std::endl;
+
+    // Initialized here for performace.
+    bool sendCharacters = false;
+    char expectedProtocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::Common)};
+    std::string received;
+
+    while (true)
+    {
+        received = read();
+
+        if (!received.empty())
+        {
+            // There's data to read. Check if it's for us.
+            std::cout << "Received packet, checking if it's ours" << std::endl;
+
+            char *receivedTypeStart = (char *)(received.data() + 12);
+            char *receivedDataStart = (char *)(received.data() + 14);
+            // Pointer to the start of the received packet protocol type.
+
+            if (receivedTypeStart[0] == expectedProtocolType[0] && receivedTypeStart[1] == expectedProtocolType[1])
+            {
+                std::cout << "Received packet is from master" << std::endl;
+                // Packet is from master. Show it. Data gets a copy of the packet data.
+                // .size() returns the size of the BUFFER not the string length. Use recommended on the C++ standard to
+                // work with raw memory bytes.
+                std::string data = std::string(receivedDataStart, received.size() - 14);
+                std::cout << "Received: " << data << std::endl;
+            }
+        }
+
+        // Check input for menu
+        if (kbhit())
+        {
+            // User hit a key.
+            char ch[2] = {0, 0};
+            ch[0] = char(getch()); // Ensure this is a valid null-terminated string that can be passed straight to
+                                   // out write function.
+
+            if (ch[0] == 'O' && !sendCharacters)
+            {
+                // User hit FN key, check which FX was hit.
+                char functionKey = getch();
+                switch (functionKey)
+                {
+                case 'P': // F1
+                {
+                    std::cout << "Slave is ready to send data to master" << std::endl;
+                    sendCharacters = true;
+
+                    break;
+                }
+                }
+            }
+            else if (ch[0] == 27)
+            {
+                // ESC
+                std::cout << "Exitting..." << std::endl;
+                return; // Exit loop.
+            }
+            else if (sendCharacters)
+            {
+                // After selecting F1, user pressed a key that is not exit. Character must be sent.
+                if (!write(m_destinationMac, expectedProtocolType, ch))
+                {
+                    std::cout << "Error while sending character, aborting..." << std::endl;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 std::string Communication::read()
