@@ -55,6 +55,12 @@ class Communication
      */
     std::string read();
 
+    /**
+     * 
+     */
+    void masterDoing();
+
+
   private:
     Adapter *m_adapter;       // Adapter used to send and receive packets throught the network interface.
     char m_sourceMac[6];      // Buffer than contains the source mac of the destination (retrieved from the adapter)

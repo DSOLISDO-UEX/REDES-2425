@@ -42,9 +42,12 @@ int main()
             communication.listenForMaster();
             break;
         }
-        case 2: // Master
+        case 2: // Master--Exclusivamente envia info, 2 tipos
         {
             communication.discoverSlave();
+
+            communication.masterDoing();
+
             break;
         }
 

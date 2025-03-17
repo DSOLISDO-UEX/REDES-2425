@@ -138,3 +138,84 @@ std::string Communication::read()
 
     return "";
 }
+
+void Communication::masterDoing()
+{
+    char stationMode;
+
+    std::cout << "Mode selection: " << std::endl;
+    std::cout << "[F1] - Interactive character sending" << std::endl;
+    std::cout << "[F2] - Sending of a file" << std::endl;
+    std::cout << "[ESC] - Exit" << std::endl;
+
+    std::cin >> stationMode; //Hace falta?
+
+    stationMode = getch();
+
+    if (stationMode == 'O')
+    {
+
+        stationMode = getch();
+
+        switch (stationMode)
+        {
+        case 'P': // F1
+
+            char ch[2] = {'\x00', '\x00'};
+
+            std::cin.ignore(); // Remove content from input buffer.
+
+            bool working = true;
+            while (working)
+            {
+                if (kbhit() == 1)
+                {
+                    ch[0] = getch();
+                    std::cout << std::endl; // Ensure newline after writing a character.
+                }
+
+                if (ch[0] == 27)
+                {
+                    working = false;
+                    std::cout << "Exiting..." << std::endl;
+
+                    continue; // Next iteration will exit the WHILE.
+                }
+
+                // SEND
+                if (ch[0] != '\x00')
+                {
+                    if (!write(m_destinationMac, 0, ch))
+                    {
+                        return;
+                    }
+                }
+
+                // RECEIVE
+                std::cout << read() << std::endl;
+
+                std::this_thread::yield(); /*
+                                            * Ensure this thread doesn't keep running on CPU without letting other
+                                            * threads execute.
+                                            */
+            }
+
+            break;
+
+        case 'Q': // F2
+
+            break;
+
+        case 'R': // F3--Nada
+
+            break;
+
+        case 'S': // F4--Nada
+
+            break;
+
+        default:
+            break;
+        }
+    }
+}
