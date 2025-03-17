@@ -40,6 +40,8 @@ int main()
         case 1: // Slave
         {
             communication.listenForMaster();
+            communication.slaveLoop();
+
             break;
         }
         case 2: // Master

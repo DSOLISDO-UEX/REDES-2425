@@ -1,8 +1,8 @@
 #include "Adapter.h"
 #include "FrameBuilder.h"
 #include <algorithm>
-#include <thread>
 #include <chrono>
+#include <thread>
 
 enum class PacketType : uint8_t
 {
@@ -48,7 +48,17 @@ class Communication
      * @param protocolType Type of the protocol, look at m_protocolType.
      * @param data Data that's going to be sent. If empty no data will be sent, ONLY THE HEADER.
      */
-    bool write(char destinationMac[6], char protocolType[2], char* data);
+    bool write(char destinationMac[6], char protocolType[2], char *data);
+
+    /**
+     * Executes the main loop of the slave station. Caller must ensure that slave and master have already stablished
+     * connection. Important: This function will block calling threaad until there's an error or execution finishes.
+     * 
+     * This function is responsible of:
+     *  - Showing slave's menu.
+     *  - Continously receiving data from master.
+     */
+    void slaveLoop();
 
     /**
      * @return Returns the ENTIRE packet read. If there was nothing to read, returns an empty string.
