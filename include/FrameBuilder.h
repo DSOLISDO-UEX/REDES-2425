@@ -3,6 +3,8 @@
 
 #include "linkLayer.h"
 #include <iostream>
+#include <vector>
+#include <fstream>
 
 /**
  * Like Adapter, this class is a bridge between C (LinkLayer) and C++.
@@ -30,19 +32,37 @@ class FrameBuilder
     bool buildEmptyFrame(char srcMAC[6], char dstMAC[6], char protocol[2]);
 
     /**
-     * @return The size of the body of the frame.
+     * @return Returns the payload of the built frame. If not built returns nullptr.
      */
-    size_t getBodySize();
-
-    /**
-     * @return The size of the data that's inside the body of the frame.
-     */
-    size_t getDataSize();
+    char *getData() const;
 
     /**
      * @return Returns the body of the frame (unsigned char*).
      */
-    char *getBody();
+    char *getBody() const;
+
+    /**
+     * @return The size of the body of the frame.
+     */
+    size_t getBodySize() const;
+
+    /**
+     * @return The size of the data that's inside the body of the frame.
+     */
+    size_t getDataSize() const;
+
+    /**
+     * Opens the input file and tries to read its content into frames of 254 characters. If a frame
+     * is less that 254, its real size will be used (for the last or first element, depending on the
+     * input file).
+     * @param srcMac
+     * @param dstMac
+     * @param protocol
+     * @param filePath
+     * @return A vector of FrameBuilders with each frame of the file. Delimiter is Trama XX- where
+     * XX is a number.
+     */
+    std::vector<FrameBuilder> fromFile(char srcMAC[6], char dstMAC[6], char protocol[2], std::string filePath);
 
   private:
     size_t m_bodySize{0};  // Size of the body of the frame (header + dataSize)
