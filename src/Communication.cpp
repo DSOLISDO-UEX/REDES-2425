@@ -240,22 +240,6 @@ std::string Communication::read()
     return "";
 }
 
-
-/* CODIGO PARA COGER TODAS LAS TRAMAS DE UN ARCHIVO Y ENVIARLAS, EL PATH A METER ES EL COMPLETO AL ARCHIVO /home/mery/..../envio.txt
-                            std::string path;
-                            std::cout << "File path: " << std::endl;
-                            std::cin >> path;
-                            std::cout << std::endl;
-
-                            auto frames =
-                                FrameBuilder().fromFile(m_sourceMac, m_destinationMac, expectedProtocolType, path);
-
-                            for (auto &frame : frames)
-                            {
-                                std::cout << frame.getData() << std::endl;
-                                write(m_destinationMac, expectedProtocolType, frame);
-                            }
-*/
 void Communication::masterDoing()
 {
     std::cin.ignore(); // Ensure input buffer is clean.
@@ -278,60 +262,84 @@ void Communication::masterDoing()
         {
             // User hit a key.
             char ch[2] = {0, 0};
-            ch[0] = char(getch()); // Ensure this is a valid null-terminated string that can be passed straight to
-                                   // out write function.
+            ch[0] = char(getch());  // Ensure this is a valid null-terminated string that can be passed straight to
+                                    // out write function.
+            std::cout << std::endl; // Make sure input and output don't overlap on console (only for better reading...)
 
-            if (ch[0] == 'O' && !sendCharacters)
+            // FN input: ESC+'0'+FN_KEY_ID ('P' , 'Q' , 'R' , 'S')
+
+            if (ch[0] == 27)
             {
-                // User hit FN key, check which FX was hit.
-                char functionKey = getch();
-                switch (functionKey)
+                if (kbhit())
                 {
-                case 'P': // F1 ------------------------------------------------------------
-                {
-                    bool working = true;
-                    while (working)
+                    ch[0] = getch();
+                    if (ch[0] == 'O' && !sendCharacters)
                     {
-
-                        received = read();
-
-                        if (!received.empty())
+                        // User hit FN key, check which FX was hit.
+                        char functionKey = getch();
+                        switch (functionKey)
                         {
-                            // There's data to read. Check if it's for us.
-                            std::cout << "Received packet, checking if it's ours" << std::endl;
-
-                            char *receivedTypeStart = (char *)(received.data() + 12);
-                            char *receivedDataStart = (char *)(received.data() + 14);
-                            // Pointer to the start of the received packet protocol type.
-
-                            if (receivedTypeStart[0] == expectedProtocolType[0] &&
-                                receivedTypeStart[2] == expectedProtocolType[2])
+                        case 'P': // F1 ------------------------------------------------------------
+                        {
+                            bool working = true;
+                            while (working)
                             {
-                                std::cout << "Received packet is from slave" << std::endl;
-                                // Packet is from slave. Show it. Data gets a copy of the packet data.
-                                // .size() returns the size of the BUFFER not the string length. Use recommended on the
-                                // C++ standard to work with raw memory bytes.
-                                std::string data = std::string(receivedDataStart, received.size() - 14);
-                                std::cout << "Received: " << data << std::endl;
+
+                                received = read();
+                                sendCharacters = true;
+
+                                if (!received.empty())
+                                {
+                                    // There's data to read. Check if it's for us.
+                                    std::cout << "Received packet, checking if it's ours" << std::endl;
+
+                                    char *receivedTypeStart = (char *)(received.data() + 12);
+                                    char *receivedDataStart = (char *)(received.data() + 14);
+                                    // Pointer to the start of the received packet protocol type.
+
+                                    if (receivedTypeStart[0] == expectedProtocolType[0] &&
+                                        receivedTypeStart[2] == expectedProtocolType[2])
+                                    {
+                                        std::cout << "Received packet is from slave" << std::endl;
+                                        // Packet is from slave. Show it. Data gets a copy of the packet data.
+                                        // .size() returns the size of the BUFFER not the string length. Use recommended
+                                        // on the C++ standard to work with raw memory bytes.
+                                        std::string data = std::string(receivedDataStart, received.size() - 14);
+                                        std::cout << "Received: " << data << std::endl;
+                                    }
+                                }
                             }
+                            std::cout << "Master is ready to send data to slave" << std::endl;
+                            break;
                         }
+                        case 'Q': // F2 ------------------------------------------------------------ 
+                        {
+                            std::cout << "Master is ready to send a file to slave" << std::endl;
+                            // CODIGO PARA COGER TODAS LAS TRAMAS DE UN ARCHIVO Y ENVIARLAS, EL PATH A METER ES EL
+                            //OMPLETO AL ARCHIVO, POR EJEMPLO "/home/mery/Maria/Redes-Proy/REDES-2425/build/envio.txt"
+                            std::string path;
+                            std::cout << "File path:" << std::endl; 
+                            std::cin >> path; 
+                            std::cout << std::endl;
 
-                    std::cout << "Master is ready to send data to slave" << std::endl;
+                            auto frames = FrameBuilder().fromFile(m_sourceMac, m_destinationMac,expectedProtocolType, path);
+
+                            for (auto &frame : frames)
+                            {                            
+                                //std::cout << frame.getData() << std::endl;  --- EScribe en master como se han dividido los frames
+                                write(m_destinationMac, expectedProtocolType, frame);                                                        
+                            }                            
+                            break;
+                        }
+                        }
                     }
-                    break;
                 }
-                case 'Q': {
-                    std::cout << "Master is ready to send a file to slave" << std::endl;
-
-                    break;
+                else
+                {
+                    // ESC
+                    std::cout << "Exitting..." << std::endl;
+                    return; // Exit loop.
                 }
-                }
-            }
-            else if (ch[0] == 27)
-            {
-                // ESC
-                std::cout << "Exitting..." << std::endl;
-                return; // Exit loop.
             }
             else if (sendCharacters)
             {
