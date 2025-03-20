@@ -118,7 +118,7 @@ bool Communication::write(char destinationMac[6], char protocolType[2], char *da
     return true;
 }
 
-bool Communication::write(char destinationMac[6], char protocolType[2], const FrameBuilder &data)
+bool Communication::write(char destinationMac[6], char protocolType[2], FrameBuilder &data)
 {
     if (!m_adapter->sendFrame(data.getBody(), data.getBodySize()))
     {
@@ -127,6 +127,8 @@ bool Communication::write(char destinationMac[6], char protocolType[2], const Fr
     }
 
     std::cout << "Sent packet" << std::endl;
+    data.free();
+
     return true;
 }
 
@@ -208,7 +210,7 @@ void Communication::slaveLoop()
                     return; // Exit loop.
                 }
             }
-            else if (sendCharacters)
+            else if (sendCharacters && ch[0] != 0)
             {
                 // After selecting F1, user pressed a key that is not exit. Character must be sent.
                 if (!write(m_destinationMac, expectedProtocolType, ch))
@@ -232,8 +234,6 @@ std::string Communication::read()
         // With this constructor, string treats data as raw memory and not a regular string, ignoring middle \x00
         // characters.
         std::string result = std::string((char *)receivedPacket.packet, receivedPacket.header.len);
-        m_adapter->freeFrameBuffer(); // Free received packet buffer because its content is already copied.
-
         return result;
     }
 
@@ -243,9 +243,6 @@ std::string Communication::read()
 void Communication::masterDoing()
 {
     std::cin.ignore(); // Ensure input buffer is clean.
-    bool sendCharacters = false;
-    std::string received;
-    char expectedProtocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::Common)};
 
     std::cout << "Initializating master loop" << std::endl;
 
@@ -255,8 +252,35 @@ void Communication::masterDoing()
     std::cout << "[F2] - Sending of a file" << std::endl;
     std::cout << "[ESC] - Exit" << std::endl;
 
+    bool sendCharacters = false;
+    char expectedProtocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::Common)};
+    std::string received;
+
     while (true)
     {
+        received = read();
+
+        // Only read if character sending was enabled.
+        if (!received.empty() && sendCharacters)
+        {
+            // There's data to read. Check if it's for us.
+            std::cout << "Received packet, checking if it's ours" << std::endl;
+
+            char *receivedTypeStart = (char *)(received.data() + 12);
+            char *receivedDataStart = (char *)(received.data() + 14);
+            // Pointer to the start of the received packet protocol type.
+
+            if (receivedTypeStart[0] == expectedProtocolType[0] && receivedTypeStart[1] == expectedProtocolType[1])
+            {
+                std::cout << "Received packet is from slave" << std::endl;
+                // Packet is from slave. Show it. Data gets a copy of the packet data.
+                // .size() returns the size of the BUFFER not the string length. Use recommended
+                // on the C++ standard to work with raw memory bytes.
+                std::string data = std::string(receivedDataStart, received.size() - 14);
+                std::cout << "Received: " << data << std::endl;
+            }
+        }
+
         // Check input for menu
         if (kbhit())
         {
@@ -281,54 +305,33 @@ void Communication::masterDoing()
                         {
                         case 'P': // F1 ------------------------------------------------------------
                         {
-                            bool working = true;
-                            while (working)
-                            {
-
-                                received = read();
-                                sendCharacters = true;
-
-                                if (!received.empty())
-                                {
-                                    // There's data to read. Check if it's for us.
-                                    std::cout << "Received packet, checking if it's ours" << std::endl;
-
-                                    char *receivedTypeStart = (char *)(received.data() + 12);
-                                    char *receivedDataStart = (char *)(received.data() + 14);
-                                    // Pointer to the start of the received packet protocol type.
-
-                                    if (receivedTypeStart[0] == expectedProtocolType[0] &&
-                                        receivedTypeStart[2] == expectedProtocolType[2])
-                                    {
-                                        std::cout << "Received packet is from slave" << std::endl;
-                                        // Packet is from slave. Show it. Data gets a copy of the packet data.
-                                        // .size() returns the size of the BUFFER not the string length. Use recommended
-                                        // on the C++ standard to work with raw memory bytes.
-                                        std::string data = std::string(receivedDataStart, received.size() - 14);
-                                        std::cout << "Received: " << data << std::endl;
-                                    }
-                                }
-                            }
+                            sendCharacters = true;
                             std::cout << "Master is ready to send data to slave" << std::endl;
                             break;
                         }
-                        case 'Q': // F2 ------------------------------------------------------------ 
+                        case 'Q': // F2 ------------------------------------------------------------
                         {
                             std::cout << "Master is ready to send a file to slave" << std::endl;
                             // CODIGO PARA COGER TODAS LAS TRAMAS DE UN ARCHIVO Y ENVIARLAS, EL PATH A METER ES EL
-                            //OMPLETO AL ARCHIVO, POR EJEMPLO "/home/mery/Maria/Redes-Proy/REDES-2425/build/envio.txt"
+                            // OMPLETO AL ARCHIVO, POR EJEMPLO "/home/mery/Maria/Redes-Proy/REDES-2425/build/envio.txt"
                             std::string path;
-                            std::cout << "File path:" << std::endl; 
-                            std::cin >> path; 
+                            std::cout << "File path:" << std::endl;
+                            std::cin >> path;
                             std::cout << std::endl;
 
-                            auto frames = FrameBuilder().fromFile(m_sourceMac, m_destinationMac,expectedProtocolType, path);
+                            auto frames =
+                                FrameBuilder().fromFile(m_sourceMac, m_destinationMac, expectedProtocolType, path);
 
                             for (auto &frame : frames)
-                            {                            
-                                //std::cout << frame.getData() << std::endl;  --- EScribe en master como se han dividido los frames
-                                write(m_destinationMac, expectedProtocolType, frame);                                                        
-                            }                            
+                            {
+                                // std::cout << frame.getData() << std::endl;  --- EScribe en master como se han
+                                // dividido los frames
+                                if (!write(m_destinationMac, expectedProtocolType, frame))
+                                {
+                                    std::cout << "Error while sending file!" << std::endl;
+                                    return;
+                                }
+                            }
                             break;
                         }
                         }
@@ -341,7 +344,7 @@ void Communication::masterDoing()
                     return; // Exit loop.
                 }
             }
-            else if (sendCharacters)
+            else if (sendCharacters && ch[0] != 0)
             {
                 // After selecting F1, user pressed a key that is not exit. Character must be sent.
                 if (!write(m_destinationMac, expectedProtocolType, ch))

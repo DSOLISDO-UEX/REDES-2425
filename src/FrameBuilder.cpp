@@ -1,5 +1,9 @@
 #include "../include/FrameBuilder.h"
 
+FrameBuilder::~FrameBuilder()
+{
+}
+
 bool FrameBuilder::buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload)
 {
     m_body = (char *)BuildFrame((unsigned char *)srcMAC, (unsigned char *)dstMAC, (unsigned char *)protocol,
@@ -40,6 +44,13 @@ size_t FrameBuilder::getBodySize() const
 size_t FrameBuilder::getDataSize() const
 {
     return m_dataSize;
+}
+
+void FrameBuilder::free() 
+{
+    m_bodySize = 0;
+    m_dataSize = 0;
+    delete m_body;
 }
 
 std::vector<FrameBuilder> FrameBuilder::fromFile(char srcMAC[6], char dstMAC[6], char protocol[2], std::string filePath)

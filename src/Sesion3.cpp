@@ -47,7 +47,6 @@ int main()
         case 2: // Master--Exclusivamente envia info, 2 tipos
         {
             communication.discoverSlave();
-
             communication.masterDoing();
 
             break;

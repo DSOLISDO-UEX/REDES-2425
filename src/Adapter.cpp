@@ -7,6 +7,7 @@ apacket_t Adapter::receiveFrame()
 
 bool Adapter::close()
 {
+    freeFrameBuffer();
     return CloseAdapter(&m_selectedInterface) == 0;
 }
 

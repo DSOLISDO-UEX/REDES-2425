@@ -51,11 +51,12 @@ class Communication
     bool write(char destinationMac[6], char protocolType[2], char *data);
 
     /**
+     * Sends the built frame. WILL FREE DATA.
      * @param destinationMac Destination device for the packet.
      * @param protocolType Type of the protocol, look at m_protocolType.
      * @param data Built frame WITH DATA.
      */
-    bool write(char destinationMac[6], char protocolType[2], const FrameBuilder &data);
+    bool write(char destinationMac[6], char protocolType[2], FrameBuilder &data);
 
     /**
      * Executes the main loop of the slave station. Caller must ensure that slave and master have already stablished

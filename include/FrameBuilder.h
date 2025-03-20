@@ -13,6 +13,11 @@ class FrameBuilder
 {
   public:
     /**
+     * Won't free inside buffer, caller must ensure it is freed.
+     */
+    ~FrameBuilder();
+
+    /**
      * Builds a frame with the given information and payload.
      * @param srcMac MAC of the source device.
      * @param dstMac MAC of the destination device.
@@ -50,6 +55,11 @@ class FrameBuilder
      * @return The size of the data that's inside the body of the frame.
      */
     size_t getDataSize() const;
+
+    /**
+     * Frees the built frame.
+     */
+    void free();
 
     /**
      * Opens the input file and tries to read its content into frames of 254 characters. If a frame
