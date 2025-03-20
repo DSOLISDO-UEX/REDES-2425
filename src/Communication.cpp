@@ -255,6 +255,8 @@ void Communication::masterDoing()
                     while (working)
                     {
 
+                        //HACER UN BOOL Q SIEMPRE HAGA Q LEA, COMO LO D DANI D ESCRIBIR
+
                     received = read();
 
                     if (!received.empty())
@@ -278,34 +280,6 @@ void Communication::masterDoing()
                     }
 
                     std::cout << "Master is ready to send data to slave" << std::endl;
-                    char ch[2] = {'\x00', '\x00'};
-
-                    std::cin.ignore(); // Remove content from input buffer.
-
-                    
-                        if (kbhit() == 1)
-                        {
-                            ch[0] = getch();
-                            std::cout << std::endl; // Ensure newline after writing a character.
-                        }
-
-                        if (ch[0] == 27)
-                        {
-                            working = false;
-                            std::cout << "Exiting..." << std::endl;
-
-                            continue; // Next iteration will exit the WHILE.
-                        }
-
-                        // SEND
-                        if (ch[0] != '\x00')
-                        {
-                            if (!write(m_destinationMac, 0, ch))
-                            {
-                                return;
-                            }
-                        }
-
                     }
                     break;
                     
