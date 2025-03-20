@@ -51,6 +51,13 @@ class Communication
     bool write(char destinationMac[6], char protocolType[2], char *data);
 
     /**
+     * @param destinationMac Destination device for the packet.
+     * @param protocolType Type of the protocol, look at m_protocolType.
+     * @param data Built frame WITH DATA.
+     */
+    bool write(char destinationMac[6], char protocolType[2], const FrameBuilder &data);
+
+    /**
      * Executes the main loop of the slave station. Caller must ensure that slave and master have already stablished
      * connection. Important: This function will block calling threaad until there's an error or execution finishes.
      * 
