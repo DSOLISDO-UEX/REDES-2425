@@ -7,7 +7,7 @@ apacket_t Adapter::receiveFrame()
 
 bool Adapter::close()
 {
-    freeFrameBuffer();
+    freeFrameBuffer(); // Free pending incomming packets.
     return CloseAdapter(&m_selectedInterface) == 0;
 }
 

@@ -23,9 +23,10 @@ class FrameBuilder
      * @param dstMac MAC of the destination device.
      * @param protocol Protocol for the frame.
      * @param payload Data that will be in the frame.
+     * @param payloadSize Size of the payload str (including null terminator).
      * @return True if there wasn't any error.
      */
-    bool buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload);
+    bool buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload, size_t payloadSize);
 
     /**
      * Builds the header of the frame.

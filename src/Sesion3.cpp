@@ -44,10 +44,10 @@ int main()
 
             break;
         }
-        case 2: // Master--Exclusivamente envia info, 2 tipos
+        case 2: // Master
         {
             communication.discoverSlave();
-            communication.masterDoing();
+            communication.masterLoop();
 
             break;
         }
