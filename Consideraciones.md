@@ -1,8 +1,13 @@
 # Organizacion del proyecto 
-Hemos decidido hacer el proyecto en C++. Para ahorrarnos problemas al usar C y C++ hemos creado un puente entre la librería proporcionada (linkLayer) y nuestro proyecto. Este puente se compone de 2 librerias:
+## Importante para la entrega 3 y posterior
+El archivo 'envio.txt' está ubicado en "build/envio.txt". A falta de requerimiento expreso, hemos decidido que para enviar el archivo se tenga que poner el path
+COMPLETO a el.
+
+## Lenguaje usado
+Hemos decidido hacer el proyecto en C++. Para ahorrarnos problemas al usar C y C++ hemos creado un puente entre la librería proporcionada (linkLayer) y nuestro proyecto. Este puente se compone de 3 librerias:
 - Adapter, se encarga de todo lo relacionado con el adaptador en sí mismo.
 - FrameBuilder, se encarga de construir los "frames" que luego se mandarán a traves del adaptador.
-- Communication, se encarga de administrar todo lo relacionado con la estaciones esclava / maestra.
+- Communication, se encarga de administrar todo lo relacionado con la estaciones esclava / maestra y su comunicacion.
 
 # Estilo de codigo
 Hemos decidido usar ClangFormat, basado en el estilo de Microsoft, para homogeneizar el código. Los métodos de las clases, así como sus atributos, están ordenados alfabéticamente según su tipo pero hemos tenido en cuenta algunas consideraciones:
