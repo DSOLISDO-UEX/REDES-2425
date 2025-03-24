@@ -13,7 +13,7 @@ enum class PacketType : uint8_t
 
 /**
  * This class represents a communication. It holds a pointer to the adapter and information
- * about the conexion (src and dest mac, ...)
+ * about the conection (src and dest mac, ...)
  */
 class Communication
 {
@@ -87,6 +87,18 @@ class Communication
      * @return Returns the ENTIRE packet read. If there was nothing to read, returns an empty string.
      */
     std::string read();
+
+  private:
+
+    /**
+     * Shows the menu for the master station.
+     */
+    void showMasterMenu();
+    
+    /**
+     * Shows the menu for the slave station.
+     */
+    void showSlaveMenu();
 
   private:
     Adapter *m_adapter;       // Adapter used to send and receive packets throught the network interface.

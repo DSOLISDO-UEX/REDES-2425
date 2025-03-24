@@ -108,14 +108,7 @@ bool Communication::write(char destinationMac[6], char protocolType[2], char *da
         }
     }
 
-    if (!m_adapter->sendFrame(builder.getBody(), builder.getBodySize()))
-    {
-        std::cout << "Could not send packet" << std::endl;
-        return false;
-    }
-
-    std::cout << "Sent packet" << std::endl;
-    return true;
+    return write(destinationMac, protocolType, builder);
 }
 
 bool Communication::write(char destinationMac[6], char protocolType[2], FrameBuilder &data)
@@ -126,7 +119,7 @@ bool Communication::write(char destinationMac[6], char protocolType[2], FrameBui
         return false;
     }
 
-    std::cout << "Sent packet" << std::endl;
+    std::cout << "Sent packet of length:" << data.getBodySize() << std::endl;
     data.free(); // Free sent data.
 
     return true;
@@ -134,14 +127,7 @@ bool Communication::write(char destinationMac[6], char protocolType[2], FrameBui
 
 void Communication::masterLoop()
 {
-    std::cin.ignore(); // Ensure input buffer is clean.
-    std::cout << "Initializating master loop" << std::endl;
-
-    // Menu
-    std::cout << "Mode selection: " << std::endl;
-    std::cout << "[F1] - Interactive character sending" << std::endl;
-    std::cout << "[F2] - Sending of a file" << std::endl;
-    std::cout << "[ESC] - Exit" << std::endl;
+    showMasterMenu();
 
     bool sendCharacters = false;
     char expectedProtocolType[2] = {char(0x30 + m_groupNumber), static_cast<uint8_t>(PacketType::Common)};
@@ -155,8 +141,6 @@ void Communication::masterLoop()
         if (!received.empty() && sendCharacters)
         {
             // There's data to read. Check if it's for us.
-            std::cout << "Received packet, checking if it's ours" << std::endl;
-
             char *receivedTypeStart = (char *)(received.data() + 12);
             char *receivedDataStart = (char *)(received.data() + 14);
             // Pointer to the start of the received packet protocol type.
@@ -205,11 +189,7 @@ void Communication::masterLoop()
                             std::cout << "Master is ready to send a file to slave" << std::endl;
 
                             // Sends a file splitted in frames (Trama-XX....)
-                            std::string path;
-                            std::cout << "File path:" << std::endl;
-                            std::cin >> path;
-                            std::cout << std::endl; // Add a new line (better reading).
-
+                            std::string path = "envio.txt";
                             std::vector<FrameBuilder> frames =
                                 FrameBuilder().fromFile(m_sourceMac, m_destinationMac, expectedProtocolType, path);
 
@@ -222,14 +202,20 @@ void Communication::masterLoop()
                                 }
                             }
 
-                            return masterLoop(); // Volver a mostrar el menu.
+                            showMasterMenu();
                         }
                         }
                     }
                 }
+                else if (sendCharacters)
+                {
+                    // Exit pressed inside a mode, restore and show menu again.
+                    sendCharacters = false;
+                    showMasterMenu();
+                }
                 else
                 {
-                    // ESC
+                    // ESC was hit on the menu, exit the program.
                     std::cout << "Exitting..." << std::endl;
                     return; // Exit loop.
                 }
@@ -249,13 +235,7 @@ void Communication::masterLoop()
 
 void Communication::slaveLoop()
 {
-    std::cin.ignore(); // Ensure input buffer is clean.
-    std::cout << "Initializing slave loop" << std::endl;
-
-    // Show menu.
-    std::cout << "Chose working method: " << std::endl;
-    std::cout << "[F1] Sent characters interactively. " << std::endl;
-    std::cout << "[ESC] Exit." << std::endl;
+    showSlaveMenu();
 
     // Initialized here for performace.
     bool sendCharacters = false;
@@ -265,12 +245,8 @@ void Communication::slaveLoop()
     while (true)
     {
         received = read();
-
         if (!received.empty())
         {
-            // There's data to read. Check if it's for us.
-            std::cout << "Received packet, checking if it's ours" << std::endl;
-
             char *receivedTypeStart = (char *)(received.data() + 12);
             char *receivedDataStart = (char *)(received.data() + 14);
             // Pointer to the start of the received packet protocol type.
@@ -318,9 +294,15 @@ void Communication::slaveLoop()
                         }
                     }
                 }
+                else if (sendCharacters)
+                {
+                    // Exit pressed inside a mode, restore and show menu again.
+                    sendCharacters = false;
+                    showSlaveMenu();
+                }
                 else
                 {
-                    // ESC
+                    // ESC was hit on the menu, exit the program.
                     std::cout << "Exitting..." << std::endl;
                     return; // Exit loop.
                 }
@@ -345,12 +327,40 @@ std::string Communication::read()
 
     if (receivedPacket.packet != nullptr)
     {
-        std::cout << "Received packet" << std::endl;
         // With this constructor, string treats data as raw memory and not a regular string, ignoring middle \x00
         // characters.
         std::string result = std::string((char *)receivedPacket.packet, receivedPacket.header.len);
+
+        std::cout << "Received packet of length: " << result.size() << std::endl;
         return result;
     }
 
     return "";
+}
+
+void Communication::showMasterMenu()
+{
+    if (std::cin.rdbuf()->in_avail() > 0)
+        std::cin.ignore(); // Ensure input buffer is clean without blocking calling thread.
+
+    std::cout << "Initializating master loop" << std::endl;
+
+    // Menu
+    std::cout << "Mode selection: " << std::endl;
+    std::cout << "[F1] - Interactive character sending" << std::endl;
+    std::cout << "[F2] - Sending of a file" << std::endl;
+    std::cout << "[ESC] - Exit" << std::endl;
+}
+
+void Communication::showSlaveMenu()
+{
+    if (std::cin.rdbuf()->in_avail() > 0)
+        std::cin.ignore(); // Ensure input buffer is clean without blocking calling thread.
+
+    std::cout << "Initializing slave loop" << std::endl;
+
+    // Show menu.
+    std::cout << "Chose working method: " << std::endl;
+    std::cout << "[F1] Sent characters interactively. " << std::endl;
+    std::cout << "[ESC] Exit." << std::endl;
 }
