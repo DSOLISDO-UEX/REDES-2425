@@ -13,7 +13,6 @@ bool WaitAndStopFrameBuilder::buildControl(char address, char control, char fram
     m_data += control;
     m_data += frameNumber;
 
-
     return FrameBuilder::buildFrame((char*)m_data.data(), m_data.size());
 }
 
