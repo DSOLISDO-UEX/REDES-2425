@@ -1,4 +1,4 @@
-#include "../include/Adapter.h"
+#include "Adapter.h"
 
 apacket_t Adapter::receiveFrame()
 {

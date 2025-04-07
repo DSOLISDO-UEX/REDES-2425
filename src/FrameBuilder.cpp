@@ -1,12 +1,21 @@
-#include "../include/FrameBuilder.h"
+#include "FrameBuilder.h"
+
+FrameBuilder::FrameBuilder(char srcMac[6], char dstMac[6], char protocol[2])
+{
+    std::copy_n(srcMac, 6, m_srcMac);
+    std::copy_n(dstMac, 6, m_dstMac);
+    std::copy_n(protocol, 2, m_protocol);
+}
 
 FrameBuilder::~FrameBuilder()
 {
 }
 
-bool FrameBuilder::buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload, size_t payloadSize)
+bool FrameBuilder::buildFrame(char *payload, size_t payloadSize)
 {
-    m_body = (char *)BuildFrame((unsigned char *)srcMAC, (unsigned char *)dstMAC, (unsigned char *)protocol,
+    free(); // If multiple frames are being built, this is required not to have a memory leak.
+
+    m_body = (char *)BuildFrame((unsigned char *)m_srcMac, (unsigned char *)m_dstMac, (unsigned char *)m_protocol,
                                 (unsigned char *)payload);
     m_dataSize = payloadSize;
     m_bodySize = m_dataSize + 6 + 6 + 2;
@@ -14,9 +23,11 @@ bool FrameBuilder::buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], 
     return m_body != nullptr;
 }
 
-bool FrameBuilder::buildEmptyFrame(char srcMAC[6], char dstMAC[6], char protocol[2])
+bool FrameBuilder::buildEmptyFrame()
 {
-    m_body = (char *)BuildHeader((unsigned char *)srcMAC, (unsigned char *)dstMAC, (unsigned char *)protocol);
+    free(); // If multiple frames are being built, this is required not to have a memory leak.
+
+    m_body = (char *)BuildHeader((unsigned char *)m_srcMac, (unsigned char *)m_dstMac, (unsigned char *)m_protocol);
     m_dataSize = 0;
     m_bodySize = m_dataSize + 6 + 6 + 2;
 
@@ -48,12 +59,15 @@ size_t FrameBuilder::getDataSize() const
 
 void FrameBuilder::free()
 {
-    m_bodySize = 0;
-    m_dataSize = 0;
-    delete m_body;
+    if (m_body != nullptr && m_dataSize != 0)
+    {
+        m_bodySize = 0;
+        m_dataSize = 0;
+        delete m_body;
+    }
 }
 
-std::vector<FrameBuilder> FrameBuilder::fromFile(char srcMAC[6], char dstMAC[6], char protocol[2], std::string filePath)
+std::vector<FrameBuilder> FrameBuilder::fromFile(std::string filePath)
 {
     std::ifstream input(filePath);
 
@@ -72,8 +86,8 @@ std::vector<FrameBuilder> FrameBuilder::fromFile(char srcMAC[6], char dstMAC[6],
 
         size_t readSize = input.read(data, 254).gcount(); // Read 254 characters into the string(if possible).
 
-        FrameBuilder frame;
-        frame.buildFrame(srcMAC, dstMAC, protocol, data, readSize); // build this frame
+        FrameBuilder frame(m_srcMac, m_dstMac, m_protocol);
+        frame.buildFrame(data, readSize); // build this frame
 
         result.push_back(frame); // Append built frame to list.
     }

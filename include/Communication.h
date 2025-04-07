@@ -1,3 +1,6 @@
+#ifndef COMMUNICATION_H
+#define COMMUNICATION_H
+
 #include "Adapter.h"
 #include "FrameBuilder.h"
 #include <algorithm>
@@ -32,56 +35,39 @@ class Communication
     ~Communication();
 
     /**
-     * Tries to discover slaves. Must only be called by Master. Will block current thread until a slave is found.
-     * @return True if found a slave.
-     */
-    bool discoverSlave();
-
-    /**
-     * Listens for packets sent by master, will block calling thread until a master sends the initial message.
-     * @return True if found a master.
-     */
-    bool listenForMaster();
-
-    /**
-     * Sends data. Caller must ensure it's freed after calling write.
-     * @param destinationMac Destination device for the packet.
+     * Sends data. Caller must ensure it's freed after calling write and that this Communication object
+     * has a valid destination MAC.
      * @param protocolType Type of the protocol, look at m_protocolType.
      * @param data Data that's going to be sent. If empty no data will be sent, ONLY THE HEADER.
      * @param dataSize Size of the data that's going to be sent. If set to 0, no data will be sent, ONLY THE HEADER.
      * @return True if could write the frame onto destination, false other-ways.
      */
-    bool write(char destinationMac[6], char protocolType[2], char *data, size_t dataSize);
+    bool write(char protocolType[2], char *data, size_t dataSize);
 
     /**
      * Sends the built frame. WILL FREE DATA.
-     * @param destinationMac Destination device for the packet.
-     * @param protocolType Type of the protocol, look at m_protocolType.
      * @param data Built frame WITH DATA.
      * @return True if could write the frame onto destination, false other-ways.
      */
-    bool write(char destinationMac[6], char protocolType[2], FrameBuilder &data);
+    bool write(FrameBuilder &data);
 
     /**
-     * Executes the main loop of the master station. Caller must ensure that slave and master have already stablished
-     * connection. Important: This function will block calling threaad until there's an error or execution finishes.
-     *
-     * This function is responsible of:
-     *  - Showing master's menu.
-     *  - Receive/Sending characters from/to slave.
-     *  - Sending file content (splitted) to slave.
+     * Caller must ensure that setDestinationMac was called at some point previously.
+     * @return A pointer to the buffer that contains destination MAC.
      */
-    void masterLoop();
+    char* getDestinationMac();
 
     /**
-     * Executes the main loop of the slave station. Caller must ensure that slave and master have already stablished
-     * connection. Important: This function will block calling threaad until there's an error or execution finishes.
-     *
-     * This function is responsible of:
-     *  - Showing slave's menu.
-     *  - Continously receiving data from master.
+     * Caller must ensure that adapter was opened previously.
+     * @return A pointer to the buffer that contains destination MAC.
      */
-    void slaveLoop();
+    char* getSourceMac();
+
+    /**
+     * Sets the destination MAC for this communication.
+     * @param dstMac
+     */
+    void setDestinationMac(char dstMac[6]);
 
     /**
      * @return Returns the ENTIRE packet read. If there was nothing to read, returns an empty string.
@@ -89,20 +75,10 @@ class Communication
     std::string read();
 
   private:
-
-    /**
-     * Shows the menu for the master station.
-     */
-    void showMasterMenu();
-    
-    /**
-     * Shows the menu for the slave station.
-     */
-    void showSlaveMenu();
-
-  private:
     Adapter *m_adapter;       // Adapter used to send and receive packets throught the network interface.
     char m_sourceMac[6];      // Buffer than contains the source mac of the destination (retrieved from the adapter)
     char m_destinationMac[6]; // Buffer that contains the destination mac (retrieved throught discoverMac())
     char m_groupNumber;
 };
+
+#endif // COMMUNICATION_H

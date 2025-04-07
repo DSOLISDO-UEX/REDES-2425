@@ -9,10 +9,15 @@
                 "${workspaceFolder}/src/Adapter.cpp",
                 "${workspaceFolder}/src/Communication.cpp",
                 "${workspaceFolder}/src/FrameBuilder.cpp",
-                "${workspaceFolder}/src/Sesion3.cpp",
+                "${workspaceFolder}/src/Sesion4.cpp",
+                "${workspaceFolder}/src/GenericStation.cpp",
+                "${workspaceFolder}/src/SlaveStation.cpp",
+                "${workspaceFolder}/src/MasterStation.cpp",
                 "${workspaceFolder}/src/linkLayer.a",
                 "-o",
-                "${workspaceFolder}/build/Project",                
+                "${workspaceFolder}/build/Project", 
+                "-I", // Headers
+                "${workspaceFolder}/include", // Headers
                 "-lpcap",
                 "-pthread",
                 "-fpermissive"
