@@ -1,4 +1,4 @@
-#include "../include/Communication.h"
+#include "Communication.h"
 
 Communication::Communication(Adapter *adapter, char groupNumber)
 {
@@ -14,10 +14,10 @@ Communication::~Communication()
 
 bool Communication::write(char protocolType[2], char *data, size_t dataSize)
 {
-    FrameBuilder builder;
+    FrameBuilder builder(m_sourceMac, m_destinationMac, protocolType);
     if (data && dataSize != 0)
     {
-        if (!builder.buildFrame(m_sourceMac, m_destinationMac, protocolType, data, dataSize))
+        if (!builder.buildFrame(data, dataSize))
         {
             std::cout << "Could not build frame with data!" << std::endl;
             return false;
@@ -25,17 +25,17 @@ bool Communication::write(char protocolType[2], char *data, size_t dataSize)
     }
     else
     {
-        if (!builder.buildEmptyFrame(m_sourceMac, m_destinationMac, protocolType))
+        if (!builder.buildEmptyFrame())
         {
             std::cout << "Could not build frame without data!" << std::endl;
             return false;
         }
     }
 
-    return write(protocolType, builder);
+    return write(builder);
 }
 
-bool Communication::write(char protocolType[2], FrameBuilder &data)
+bool Communication::write(FrameBuilder &data)
 {
     if (!m_adapter->sendFrame(data.getBody(), data.getBodySize()))
     {
@@ -72,11 +72,23 @@ std::string Communication::read()
 
     if (receivedPacket.packet != nullptr)
     {
+        // Calculate real length of the packet. It supposes packet content ends with \x00
+        size_t realLength = 14;
+        while(realLength < receivedPacket.header.len)
+        {
+            realLength++;
+
+            // Omit srcMac, dstMac, protocolType.
+            if (receivedPacket.packet[realLength] == '\x00')
+                break;
+        }
+
+
         // With this constructor, string treats data as raw memory and not a regular string, ignoring middle \x00
         // characters.
-        std::string result = std::string((char *)receivedPacket.packet, receivedPacket.header.len);
+        std::string result = std::string((char *)receivedPacket.packet, realLength);
 
-        std::cout << "Received packet of length: " << result.size() << std::endl;
+        std::cout << "Received packet of length: " << realLength << std::endl;
         return result;
     }
 

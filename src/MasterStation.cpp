@@ -1,4 +1,4 @@
-#include "../include/MasterStation.h"
+#include "MasterStation.h"
 
 MasterStation::MasterStation(Adapter *adapter, char groupNumber) : GenericStation(adapter, groupNumber)
 {
@@ -69,9 +69,10 @@ bool MasterStation::loop()
 
                             // Sends a file splitted in frames (Trama-XX....)
                             std::string path = "envio.txt";
-                            std::vector<FrameBuilder> frames = FrameBuilder().fromFile(
-                                m_communication->getSourceMac(), m_communication->getDestinationMac(),
-                                expectedProtocolType, path);
+                            std::vector<FrameBuilder> frames =
+                                FrameBuilder(m_communication->getSourceMac(), m_communication->getDestinationMac(),
+                                             expectedProtocolType)
+                                    .fromFile(path);
 
                             for (FrameBuilder &frame : frames)
                             {

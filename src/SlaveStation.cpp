@@ -1,4 +1,4 @@
-#include "../include/SlaveStation.h"
+#include "SlaveStation.h"
 
 SlaveStation::SlaveStation(Adapter *adapter, char groupNumber) : GenericStation(adapter, groupNumber)
 {

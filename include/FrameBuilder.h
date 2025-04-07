@@ -2,9 +2,10 @@
 #define FRAME_BUILDER_H
 
 #include "linkLayer.h"
+#include <fstream>
 #include <iostream>
 #include <vector>
-#include <fstream>
+#include <algorithm>
 
 /**
  * Like Adapter, this class is a bridge between C (LinkLayer) and C++.
@@ -12,30 +13,33 @@
 class FrameBuilder
 {
   public:
+    /** Creates the object with the information given. Can be reused to build multiple frames.
+     * @param srcMac
+     * @param dstMac
+     * @param protocol
+     */
+    FrameBuilder(char srcMac[6], char dstMac[6], char protocol[2]);
+
     /**
      * Won't free inside buffer, caller must ensure it is freed.
      */
     ~FrameBuilder();
 
     /**
-     * Builds a frame with the given information and payload.
-     * @param srcMac MAC of the source device.
-     * @param dstMac MAC of the destination device.
-     * @param protocol Protocol for the frame.
+     * Builds a frame with the given payload. 
+     * WARNING: If multiple frames are built, the last one will be released.  
      * @param payload Data that will be in the frame.
      * @param payloadSize Size of the payload str (including null terminator).
      * @return True if there wasn't any error.
      */
-    bool buildFrame(char srcMAC[6], char dstMAC[6], char protocol[2], char *payload, size_t payloadSize);
+    bool buildFrame(char *payload, size_t payloadSize);
 
     /**
      * Builds the header of the frame.
-     * @param srcMac MAC of the source device.
-     * @param dstMac MAC of the destination device.
-     * @param protocol Protocol for the frame.
+     * WARNING: If multiple frames are built, the last one will be released.
      * @return True if there wasn't any error.
      */
-    bool buildEmptyFrame(char srcMAC[6], char dstMAC[6], char protocol[2]);
+    bool buildEmptyFrame();
 
     /**
      * @return Returns the payload of the built frame. If not built returns nullptr.
@@ -58,7 +62,7 @@ class FrameBuilder
     size_t getDataSize() const;
 
     /**
-     * Frees the built frame.
+     * Frees the built frame if it's not already free.
      */
     void free();
 
@@ -73,12 +77,15 @@ class FrameBuilder
      * @return A vector of FrameBuilders with each frame of the file. Delimiter is Trama XX- where
      * XX is a number.
      */
-    std::vector<FrameBuilder> fromFile(char srcMAC[6], char dstMAC[6], char protocol[2], std::string filePath);
+    std::vector<FrameBuilder> fromFile(std::string filePath);
 
   private:
+    char m_srcMac[6]{};
+    char m_dstMac[6]{};
+    char m_protocol[2]{};
+    char *m_body{nullptr}; // Body of the frame.
     size_t m_bodySize{0};  // Size of the body of the frame (header + dataSize)
     size_t m_dataSize{0};  // Size of the data sent with frame's body.
-    char *m_body{nullptr}; // Body of the frame.
 };
 
 #endif

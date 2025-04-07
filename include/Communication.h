@@ -46,12 +46,10 @@ class Communication
 
     /**
      * Sends the built frame. WILL FREE DATA.
-     * @param destinationMac Destination device for the packet.
-     * @param protocolType Type of the protocol, look at m_protocolType.
      * @param data Built frame WITH DATA.
      * @return True if could write the frame onto destination, false other-ways.
      */
-    bool write(char protocolType[2], FrameBuilder &data);
+    bool write(FrameBuilder &data);
 
     /**
      * Caller must ensure that setDestinationMac was called at some point previously.

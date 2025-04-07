@@ -15,7 +15,9 @@
                 "${workspaceFolder}/src/MasterStation.cpp",
                 "${workspaceFolder}/src/linkLayer.a",
                 "-o",
-                "${workspaceFolder}/build/Project",                
+                "${workspaceFolder}/build/Project", 
+                "-I", // Headers
+                "${workspaceFolder}/include", // Headers
                 "-lpcap",
                 "-pthread",
                 "-fpermissive"
