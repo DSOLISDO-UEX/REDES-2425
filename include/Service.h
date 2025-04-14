@@ -2,6 +2,7 @@
 #define SERVICE_H
 
 #include "Communication.h"
+#include "WaitAndStopFrameBuilder.h"
 
 enum class Control
 {
@@ -24,8 +25,13 @@ class Service
         char calculateBCE(std::string &data);
 
 
+        Communication* getCommunication();
+
+        char sendAckOrNack(const std::string &data, char receivedBCE);
 
 
+    private:
+        Communication* m_comm;
 };
 
 #endif
