@@ -49,12 +49,19 @@ bool Communication::write(FrameBuilder &data)
     return true;
 }
 
-char* Communication::getDestinationMac()
+char *Communication::getCommonProtocol()
+{
+    // This is made static because 1 running program will only have 1 Communication.
+    static char protocol[2] = {char(0x30 + m_groupNumber), static_cast<char>(FrameType::Common)};
+    return protocol;
+}
+
+char *Communication::getDestinationMac()
 {
     return m_destinationMac;
 }
 
-char* Communication::getSourceMac()
+char *Communication::getSourceMac()
 {
     return m_sourceMac;
 }
@@ -65,7 +72,36 @@ void Communication::setDestinationMac(char dstMac[6])
     std::cout << "Set destination MAC:" << m_adapter->getMacAsStr(dstMac) << std::endl;
 }
 
+void Communication::setExpectedFrameType(FrameType type)
+{
+    m_expectedPacketType = type;
+}
+
 std::string Communication::read()
+{
+    std::string received = readInternal();
+
+    if (received.empty())
+        return "";
+
+    // There's data to read. Check if it's for us.
+    char *receivedTypeStart = (char *)(received.data() + 12);
+    char *receivedDataStart = (char *)(received.data() + 14);
+    // Pointer to the start of the received packet protocol type.
+
+    if (receivedTypeStart[0] == char(0x30 + m_groupNumber) && receivedTypeStart[1] == char(m_expectedPacketType))
+    {
+        std::cout << "Received packet is from pair" << std::endl;
+        // Packet is from slave. Show it. Data gets a copy of the packet data.
+        // .size() returns the size of the BUFFER not the string length. Use recommended
+        // on the C++ standard to work with raw memory bytes.
+        return std::string(receivedDataStart, received.size() - 14); // Returns frame's data.
+    }
+
+    return "";
+}
+
+std::string Communication::readInternal()
 {
     apacket_t receivedPacket{};
     receivedPacket = m_adapter->receiveFrame();
@@ -74,7 +110,7 @@ std::string Communication::read()
     {
         // Calculate real length of the packet. It supposes packet content ends with \x00
         size_t realLength = 14;
-        while(realLength < receivedPacket.header.len)
+        while (realLength < receivedPacket.header.len)
         {
             realLength++;
 
@@ -82,7 +118,6 @@ std::string Communication::read()
             if (receivedPacket.packet[realLength] == '\x00')
                 break;
         }
-
 
         // With this constructor, string treats data as raw memory and not a regular string, ignoring middle \x00
         // characters.

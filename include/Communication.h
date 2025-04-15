@@ -7,7 +7,7 @@
 #include <chrono>
 #include <thread>
 
-enum class PacketType : uint8_t
+enum class FrameType : uint8_t
 {
     Common = 0,        // Once Communication has been established, packets are ALL of this type.
     AskForSlave = 1,   // Sent by Master. Asks every device on the network if they are the Slave.
@@ -52,16 +52,22 @@ class Communication
     bool write(FrameBuilder &data);
 
     /**
+     * Returns the protocol type used to send common packages between already-paired devices.
+     * @return A pointer to the start of the protocol buffer.
+     */
+    char *getCommonProtocol();
+
+    /**
      * Caller must ensure that setDestinationMac was called at some point previously.
      * @return A pointer to the buffer that contains destination MAC.
      */
-    char* getDestinationMac();
+    char *getDestinationMac();
 
     /**
      * Caller must ensure that adapter was opened previously.
      * @return A pointer to the buffer that contains destination MAC.
      */
-    char* getSourceMac();
+    char *getSourceMac();
 
     /**
      * Sets the destination MAC for this communication.
@@ -70,15 +76,31 @@ class Communication
     void setDestinationMac(char dstMac[6]);
 
     /**
-     * @return Returns the ENTIRE packet read. If there was nothing to read, returns an empty string.
+     * Sets the expected packet type. Warning: Must be called before calling read!
+     * @param type
+     */
+    void setExpectedFrameType(FrameType type);
+
+    /**
+     * Reads DATA of a received frame. Checks for slave / master will be made. If there's nothing to read,
+     * an empty string will be returned.
+     * @return The DATA of a frame.
      */
     std::string read();
+
+  private:
+    /**
+     * If FrameType == AskForSlave || RepplyToMaster, destination MAC will be set from received frame's source MAC.
+     * @return Returns the ENTIRE frame read. If there was nothing to read, returns an empty string.
+     */
+    std::string readInternal();
 
   private:
     Adapter *m_adapter;       // Adapter used to send and receive packets throught the network interface.
     char m_sourceMac[6];      // Buffer than contains the source mac of the destination (retrieved from the adapter)
     char m_destinationMac[6]; // Buffer that contains the destination mac (retrieved throught discoverMac())
-    char m_groupNumber;
+    char m_groupNumber;       // Used to know if this packet is for us.
+    FrameType m_expectedPacketType; // Used to know what packet type the Communication is waiting for.
 };
 
 #endif // COMMUNICATION_H

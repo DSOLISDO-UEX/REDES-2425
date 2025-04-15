@@ -70,16 +70,13 @@ class FrameBuilder
      * Opens the input file and tries to read its content into frames of 254 characters. If a frame
      * is less that 254, its real size will be used (for the last or first element, depending on the
      * input file).
-     * @param srcMac
-     * @param dstMac
-     * @param protocol
      * @param filePath
      * @return A vector of FrameBuilders with each frame of the file. Delimiter is Trama XX- where
      * XX is a number.
      */
     std::vector<FrameBuilder> fromFile(std::string filePath);
 
-  private:
+  protected:
     char m_srcMac[6]{};
     char m_dstMac[6]{};
     char m_protocol[2]{};

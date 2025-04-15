@@ -52,8 +52,16 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "format": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "fstream": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp",
+        "map": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "Microsoft",
-    "C_Cpp.formatting": "clangFormat"
+    "C_Cpp.formatting": "clangFormat",
+    "terminal.integrated.allowChords": false
 }

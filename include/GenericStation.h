@@ -1,13 +1,12 @@
 #ifndef GENERIC_STATION_H
 #define GENERIC_STATION_H
 
-
 #include "Adapter.h"
 #include "Communication.h"
 #include "FrameBuilder.h"
 
 /**
- * TODO: Make GenericStation use the new Service for the communication.
+ * TODO: Make GenericStation use the new WaitAndStopService for the communication.
  */
 
 /**
@@ -30,6 +29,12 @@ class GenericStation
     ~GenericStation();
 
     /**
+     * Checks for input and does actions based on it.
+     * @return True if there wasn't any error.
+     */
+    virtual bool checkInput() = 0;
+
+    /**
      * Executes the main loop of the station.
      * Important: Will block calling thread until execution finishes.
      * @return True if station finished without errors.
@@ -50,6 +55,8 @@ class GenericStation
     virtual void showMenu() = 0;
 
   protected:
+    bool m_sendCharacters;
+    bool m_working;
     char m_groupNumber;
     std::unique_ptr<Communication> m_communication;
 };

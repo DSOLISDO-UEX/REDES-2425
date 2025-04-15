@@ -3,14 +3,14 @@
 // ---------------------------- CURSO 2024/25 --------------------------------
 // ----------------------------- SESION4.CPP ---------------------------------
 //============================================================================
-#include "../include/SlaveStation.h"
-#include "../include/MasterStation.h"
+#include "SlaveStation.h"
+#include "MasterStation.h"
 #include <thread>
 
 int main()
 {
     printf("\n----------------------------\n");
-    printf("------ SESION 3 - FRC ------\n");
+    printf("------ SESION 4 - FRC ------\n");
     printf("----------------------------\n");
 
     Adapter adp;

@@ -2,6 +2,7 @@
 #define MASTER_STATION_H
 
 #include "GenericStation.h"
+#include "WaitAndStop/WaitAndStopService.h"
 
 /**
  * This class represents the Master station.
@@ -13,6 +14,12 @@ class MasterStation : public GenericStation
      * Creates the Master station with the given (opened) adapter and group number.
      */
     MasterStation(Adapter *adapter, char groupNumber);
+
+    /**
+     * Checks for input and does actions based on it.
+     * @return True if there wasn't any error.
+     */
+    bool checkInput() override;
 
     /**
      * Executes the main loop of the station.

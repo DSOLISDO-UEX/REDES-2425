@@ -70,20 +70,16 @@ void FrameBuilder::free()
 std::vector<FrameBuilder> FrameBuilder::fromFile(std::string filePath)
 {
     std::ifstream input(filePath);
-
     if (!input.is_open())
     {
         std::cout << "Could not build frames from file because there isn't file!" << std::endl;
         return {};
     }
 
-    std::string line;
     std::vector<FrameBuilder> result;
-
     while (!input.eof())
     {
         char data[254] = {0};
-
         size_t readSize = input.read(data, 254).gcount(); // Read 254 characters into the string(if possible).
 
         FrameBuilder frame(m_srcMac, m_dstMac, m_protocol);

@@ -37,6 +37,28 @@ class WaitAndStopFrameBuilder : public FrameBuilder
      */
     bool buildData(char address, char control, char *data, char frameNumber, char length, char bce);
 
+    /**
+     * @return Returns built data of this frame.
+     */
+    const std::string &getData();
+
+    /**
+     * Opens the input file and tries to read its content into frames of 254 characters. If a frame
+     * is less that 254, its real size will be used (for the last or first element, depending on the
+     * input file).
+     * @param address
+     * @param control
+     * @param initialFrameNumber
+     * @param bceCalculator A lambda expression that calculates the BCE for a frame. Allows rapid BCE-calculation
+     * changes.
+     * @param filePath
+     * @return A vector of FrameBUilder with each frame of the file. Delimiter is Trama XX- where
+     * XX is a number. RESULTING FRAMES ARE OF DATA TYPE!
+     */
+    std::vector<WaitAndStopFrameBuilder> fromFile(char address, char control, char initialFrameNumber,
+                                       std::function<char(char *data, size_t dataSize)> bceCalculator,
+                                       std::string filePath);
+
   private:
     std::string m_data;
 };
