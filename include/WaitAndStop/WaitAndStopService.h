@@ -5,23 +5,33 @@
 #include "WaitAndStop/WaitAndStopFrameBuilder.h"
 #include <map>
 
+/**
+ * A simple enumeration that contains types that can be linked to the Control field on a generic Wait&Stop Frame.
+ */
 enum class ControlType : char
 {
-    ACK = 06,      // Confirm recieved - Accept the frame.
-    ENQ = 05,      // Select slave station.
-    EOT = 04,      // Free communication.
+    ACK = 06,      // Frame successfully received. Sent by dest to source.
+    ENQ = 05,      // Select slave station, sent by Master to start communication with Wait&Stop protocol.
+    EOT = 04,      // Free communication. Sent by Master.
     NOFRAME = 100, // Return by serviceRead if there was nothing to read. Used to distinguish between erroneous frames
                    // and empty reads.
     NACK = 21,     // Ask master to resend a last frame because there was an error while receiving.
     STX = 02,      // Data frame.
-    INVALID = 101  // Returned by serviceRead if there was any error on the frame.
+    INVALID = 101  // Returned by serviceRead if there was any error on the frame (BCE mismatch).
 };
 
+/**
+ * This variable maps each ControlType to a string.
+ */
 inline std::map<ControlType, const char *> ControlType2Str = {
     {ControlType::ACK, "ACK"},         {ControlType::ENQ, "ENQ"},   {ControlType::EOT, "EOT"},
     {ControlType::NOFRAME, "NOFRAME"}, {ControlType::NACK, "NACK"}, {ControlType::STX, "STX"},
     {ControlType::INVALID, "INVALID"}};
 
+/**
+ * This class represents a service who's work is to communicate (following a Wait&Stop protocol's guidelines) Master and
+ * Slave. It assumes given Communication object is already in a "good" state when is constructed.
+ */
 class WaitAndStopService
 {
   public:
@@ -76,20 +86,30 @@ class WaitAndStopService
      */
     char calculateBCE(const std::string &data);
 
+    /**
+     * Given the data from file, calculates the value of the BCE
+     * @param data String with the data prepared to be sent
+     * @param dataSize
+     * @return char with the value of bce
+     */
+    char calculateBCE(char *data, size_t dataSize);
+
   private:
     /**
      * Sends an ACK frame to the destination device.
+     * @return True if ACK was sent successfully, false other ways.
      */
     bool sendAck();
 
     /**
      * Sends a NACK frame to the destination device.
+     * @return True if NACK was sent successfully, false other ways.
      */
     bool sendNAck();
 
     /**
      * Sends the content to the pair and print frame's information. Important! frame's real type must be
-     * WaitAndStopFrameBuilder!
+     * WaitAndStopFrameBuilder! Other ways undefined behaviout is assured!
      * @param frame
      * @return Returns true if frame was sent successfully.
      */
@@ -112,6 +132,7 @@ class WaitAndStopService
   private:
     char m_currentFrameNumber;
     Communication *m_comm;
+    size_t m_errorsLeft; // Left erros to introduce in the transfer phase. Used by Master.
 };
 
 #endif

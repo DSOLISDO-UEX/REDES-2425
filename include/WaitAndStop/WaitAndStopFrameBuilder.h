@@ -3,6 +3,10 @@
 
 #include "FrameBuilder.h"
 
+/**
+ * This class represents a child of FrameBuilder, it offers functionality to build complex Frames for Wait&Stop
+ * protocol.
+ */
 class WaitAndStopFrameBuilder : public FrameBuilder
 {
   public:
@@ -13,6 +17,12 @@ class WaitAndStopFrameBuilder : public FrameBuilder
      * @param protocol
      */
     WaitAndStopFrameBuilder(char srcMac[6], char dstMac[6], char protocol[2]);
+
+    /**
+     * Copies other into this. Makes a DEEP copy.
+     * @param other
+     */
+    WaitAndStopFrameBuilder(const WaitAndStopFrameBuilder &other);
 
     /**
      * Builds a control frame. Address will be 'R' and control one of the ControlTypes enum. Frame number will flip from
@@ -38,6 +48,18 @@ class WaitAndStopFrameBuilder : public FrameBuilder
     bool buildData(char address, char control, char *data, char frameNumber, char length, char bce);
 
     /**
+     * Frees data and internal frame, if not already freed.
+     */
+    void free() override;
+
+    /**
+     * Changes the first character of the data to the one given. If frame was not built, IT WON'T DO ANYTHING. It will
+     * also affect built's frame buffer. Used to introduce errors on Wait&Stop's protocol.
+     * @param ch
+     */
+    void hotChange(char ch);
+
+    /**
      * @return Returns built data of this frame.
      */
     const std::string &getData();
@@ -56,8 +78,8 @@ class WaitAndStopFrameBuilder : public FrameBuilder
      * XX is a number. RESULTING FRAMES ARE OF DATA TYPE!
      */
     std::vector<WaitAndStopFrameBuilder> fromFile(char address, char control, char initialFrameNumber,
-                                       std::function<char(char *data, size_t dataSize)> bceCalculator,
-                                       std::string filePath);
+                                                  std::function<char(char *data, size_t dataSize)> bceCalculator,
+                                                  std::string filePath);
 
   private:
     std::string m_data;

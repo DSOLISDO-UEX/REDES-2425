@@ -8,7 +8,7 @@
 #include <algorithm>
 
 /**
- * Like Adapter, this class is a bridge between C (LinkLayer) and C++.
+ * Like Adapter, this class is a bridge between C (LinkLayer) and C++ and allows quick-frame-building.
  */
 class FrameBuilder
 {
@@ -29,10 +29,9 @@ class FrameBuilder
      * Builds a frame with the given payload. 
      * WARNING: If multiple frames are built, the last one will be released.  
      * @param payload Data that will be in the frame.
-     * @param payloadSize Size of the payload str (including null terminator).
      * @return True if there wasn't any error.
      */
-    bool buildFrame(char *payload, size_t payloadSize);
+    bool buildFrame(const std::string &payload);
 
     /**
      * Builds the header of the frame.
@@ -64,7 +63,7 @@ class FrameBuilder
     /**
      * Frees the built frame if it's not already free.
      */
-    void free();
+    virtual void free();
 
     /**
      * Opens the input file and tries to read its content into frames of 254 characters. If a frame

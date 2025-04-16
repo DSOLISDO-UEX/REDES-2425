@@ -4,6 +4,7 @@
 #include "Adapter.h"
 #include "Communication.h"
 #include "FrameBuilder.h"
+#include "Interactive/InteractiveService.h"
 
 /**
  * TODO: Make GenericStation use the new WaitAndStopService for the communication.
@@ -55,10 +56,10 @@ class GenericStation
     virtual void showMenu() = 0;
 
   protected:
-    bool m_sendCharacters;
     bool m_working;
     char m_groupNumber;
-    std::unique_ptr<Communication> m_communication;
+    InteractiveService m_interactiveServ;
+    Communication* m_communication;
 };
 
 #endif // GENERIC_STATION_H

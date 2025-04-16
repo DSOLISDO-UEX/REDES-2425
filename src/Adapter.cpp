@@ -82,7 +82,7 @@ bool Adapter::openFromAvailable()
 
 bool Adapter::sendFrame(char *p, size_t payloadSize)
 {
-    return SendFrame(&m_selectedInterface, (unsigned char*)p, payloadSize) == 0;
+    return SendFrame(&m_selectedInterface, (unsigned char*)p, int(payloadSize)) == 0;
 }
 
 pcap_if_t *Adapter::GetAdapters()

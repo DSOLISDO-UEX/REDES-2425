@@ -11,13 +11,17 @@ FrameBuilder::~FrameBuilder()
 {
 }
 
-bool FrameBuilder::buildFrame(char *payload, size_t payloadSize)
+bool FrameBuilder::buildFrame(const std::string &payload)
 {
-    free(); // If multiple frames are being built, this is required not to have a memory leak.
+    // Since free is marked virtual, to ensure that ONLY FrameBuilder's frame is called, this is required.
+    FrameBuilder::free(); // If multiple frames are being built, this is required not to have a memory leak.
+
+    const char* cString = payload.c_str();
 
     m_body = (char *)BuildFrame((unsigned char *)m_srcMac, (unsigned char *)m_dstMac, (unsigned char *)m_protocol,
-                                (unsigned char *)payload);
-    m_dataSize = payloadSize;
+                                (unsigned char *)cString);
+
+    m_dataSize = payload.size(); // This won't include null-terminator.
     m_bodySize = m_dataSize + 6 + 6 + 2;
 
     return m_body != nullptr;
@@ -25,7 +29,8 @@ bool FrameBuilder::buildFrame(char *payload, size_t payloadSize)
 
 bool FrameBuilder::buildEmptyFrame()
 {
-    free(); // If multiple frames are being built, this is required not to have a memory leak.
+    // Since free is marked virtual, to ensure that ONLY FrameBuilder's frame is called, this is required.
+    FrameBuilder::free(); // If multiple frames are being built, this is required not to have a memory leak.
 
     m_body = (char *)BuildHeader((unsigned char *)m_srcMac, (unsigned char *)m_dstMac, (unsigned char *)m_protocol);
     m_dataSize = 0;
@@ -79,11 +84,14 @@ std::vector<FrameBuilder> FrameBuilder::fromFile(std::string filePath)
     std::vector<FrameBuilder> result;
     while (!input.eof())
     {
-        char data[254] = {0};
-        size_t readSize = input.read(data, 254).gcount(); // Read 254 characters into the string(if possible).
+        std::string data;
+        data.resize(254); // Initial maximum size.
+
+        size_t readSize = input.read(data.data(), 254).gcount(); // Read 254 characters into the string(if possible).
+        data.resize(readSize); // Adjust the string to the read size.
 
         FrameBuilder frame(m_srcMac, m_dstMac, m_protocol);
-        frame.buildFrame(data, readSize); // build this frame
+        frame.buildFrame(data);
 
         result.push_back(frame); // Append built frame to list.
     }

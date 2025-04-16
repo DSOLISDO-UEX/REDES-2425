@@ -15,9 +15,11 @@ Communication::~Communication()
 bool Communication::write(char protocolType[2], char *data, size_t dataSize)
 {
     FrameBuilder builder(m_sourceMac, m_destinationMac, protocolType);
+    std::string wrapped = std::string(data, dataSize);
+
     if (data && dataSize != 0)
     {
-        if (!builder.buildFrame(data, dataSize))
+        if (!builder.buildFrame(wrapped))
         {
             std::cout << "Could not build frame with data!" << std::endl;
             return false;
@@ -37,7 +39,7 @@ bool Communication::write(char protocolType[2], char *data, size_t dataSize)
 
 bool Communication::write(FrameBuilder &data)
 {
-    if (!m_adapter->sendFrame(data.getBody(), data.getBodySize()))
+    if (!m_adapter->sendFrame(data.getBody(), data.getDataSize()))
     {
         std::cout << "Could not send packet" << std::endl;
         return false;
@@ -74,7 +76,7 @@ void Communication::setDestinationMac(char dstMac[6])
 
 void Communication::setExpectedFrameType(FrameType type)
 {
-    m_expectedPacketType = type;
+    m_expectedFrameType = type;
 }
 
 std::string Communication::read()
@@ -89,13 +91,19 @@ std::string Communication::read()
     char *receivedDataStart = (char *)(received.data() + 14);
     // Pointer to the start of the received packet protocol type.
 
-    if (receivedTypeStart[0] == char(0x30 + m_groupNumber) && receivedTypeStart[1] == char(m_expectedPacketType))
+    if (receivedTypeStart[0] == char(0x30 + m_groupNumber) && receivedTypeStart[1] == char(m_expectedFrameType))
     {
-        std::cout << "Received packet is from pair" << std::endl;
+        if (m_expectedFrameType == FrameType::AskForSlave || m_expectedFrameType == FrameType::RepplyToMaster)
+        {
+            // If expected type is one of the discovering phase, we want to keep source mac and set it as destination.
+            setDestinationMac((char *)(received.data() + 6));
+        }
+
         // Packet is from slave. Show it. Data gets a copy of the packet data.
-        // .size() returns the size of the BUFFER not the string length. Use recommended
-        // on the C++ standard to work with raw memory bytes.
-        return std::string(receivedDataStart, received.size() - 14); // Returns frame's data.
+        if (received.size() > 14)
+            return std::string(receivedDataStart, received.size() - 14); // Returns frame's data.
+        else
+            return "0"; // An empty frame was received. Return 1 character so Master / Slave know there was something read.
     }
 
     return "";
@@ -112,18 +120,18 @@ std::string Communication::readInternal()
         size_t realLength = 14;
         while (realLength < receivedPacket.header.len)
         {
-            realLength++;
-
             // Omit srcMac, dstMac, protocolType.
             if (receivedPacket.packet[realLength] == '\x00')
                 break;
+
+            realLength++;
         }
 
         // With this constructor, string treats data as raw memory and not a regular string, ignoring middle \x00
         // characters.
         std::string result = std::string((char *)receivedPacket.packet, realLength);
-
         std::cout << "Received packet of length: " << realLength << std::endl;
+
         return result;
     }
 

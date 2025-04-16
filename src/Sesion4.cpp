@@ -57,6 +57,7 @@ int main()
 
     station->tryDiscovery();
     station->loop();
+    delete station;
 
     adp.close();
     return 0;

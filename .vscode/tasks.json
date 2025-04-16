@@ -14,6 +14,7 @@
                 "${workspaceFolder}/src/SlaveStation.cpp",
                 "${workspaceFolder}/src/MasterStation.cpp",
                 "${workspaceFolder}/src/linkLayer.a",
+                "${workspaceFolder}/src/Interactive/InteractiveService.cpp",
                 "${workspaceFolder}/src/WaitAndStop/WaitAndStopFrameBuilder.cpp",
                 "${workspaceFolder}/src/WaitAndStop/WaitAndStopService.cpp",
                 "-o",

@@ -1,6 +1,6 @@
 #include "WaitAndStop/WaitAndStopService.h"
 
-WaitAndStopService::WaitAndStopService(Communication *comm) : m_currentFrameNumber('0'), m_comm(comm)
+WaitAndStopService::WaitAndStopService(Communication *comm) : m_currentFrameNumber('0'), m_comm(comm), m_errorsLeft(0)
 {
 }
 
@@ -77,33 +77,57 @@ bool WaitAndStopService::startMasterTransfer()
     std::vector<WaitAndStopFrameBuilder> builtFrames = builder.fromFile(
         'R', static_cast<char>(ControlType::STX), m_currentFrameNumber,
         [this](char *data, size_t dataSize) -> char { // C++11 lambda functions.
-            // String ALWAYS makes a copy, could be optimized with std::string_view but it's C++17...
-            std::string wrapped = std::string(data, dataSize);
-            return calculateBCE(wrapped);
+            return calculateBCE(data, dataSize);
         },
         "EProtoc.txt");
 
     for (auto &frame : builtFrames)
     {
-        if (!serviceWrite(frame))
+        if (kbhit())
         {
-            std::cout << "Could not send data frame" << std::endl;
-            return false;
+            char ch = char(getch());
+            if (ch == 27 && kbhit())
+            {
+                // User pressed FN key. Check if it's F4.
+                ch = char(getch());
+                if (ch == 'O' && kbhit())
+                {
+                    ch = char(getch());
+                    if (ch == 'S')
+                        m_errorsLeft++; // Introduce an error.
+                }
+            }
         }
-
-        std::cout << "Waiting reply" << std::endl;
 
         // This loop will wait for a reply. If reply is NACK, frame will be resent. If it's ACK, next
         // piece of data will be sent. Other replies will be ignored.
-        while (!waitForReply())
+        bool introducedError = false;
+        do
         {
-            // Resend frame
-            if (!serviceWrite(frame))
+            // Ensure that if a frame is replied with NACK, it can be re-sent without it have being freed.
+            WaitAndStopFrameBuilder copy = WaitAndStopFrameBuilder(frame);
+
+            if (m_errorsLeft > 0 && !introducedError)
             {
-                std::cout << "Could not RE-SEND data frame" << std::endl;
+                std::cout << "Introducing error" << std::endl;
+                // Introduce only 1 error in a frame 1 time. Next time frame is sent, it will be sent properly.
+                // If 'ç' is used, a weird conversion error happens. Decided to use its numerical value.
+                copy.hotChange(char(135));
+
+                introducedError = true;
+                m_errorsLeft--;
+            }
+
+            if (!serviceWrite(copy)) // Remember write also frees the frame, this avoids potential memory leaks.
+            {
+                std::cout << "Could not send data frame" << std::endl;
                 return false;
             }
-        }
+
+        } while (!waitForReply());
+
+        // Frame has been replied with an ACK, it can now be freed.
+        frame.free();
     }
 
     std::cout << "Finished transfering!" << std::endl;
@@ -136,6 +160,15 @@ bool WaitAndStopService::startSlaveTransfer()
 {
     m_currentFrameNumber = '0';
 
+    std::ofstream out("RProtoc.txt",
+                      std::ios::out | std::ios::trunc); // Open file, create if it doesn't exist and delete if exists.
+
+    if (!out.is_open())
+    {
+        std::cout << "Could not create out file!" << std::endl;
+        return false;
+    }
+
     ControlType type = ControlType::NOFRAME;
     while (type == ControlType::NOFRAME)
     {
@@ -144,7 +177,7 @@ bool WaitAndStopService::startSlaveTransfer()
         if (type == ControlType::STX)
         {
             // Frame is correct, print its content.
-            std::cout << "Received: " << data << std::endl;
+            out << data;
             sendAck();
 
             // Update frame number.
@@ -163,6 +196,8 @@ bool WaitAndStopService::startSlaveTransfer()
         {
             // Master asked for the finalization of the connection.
             std::cout << "Master asked to finish transfering" << std::endl;
+
+            out.close(); // Ensure file is closed.
             return true;
         }
 
@@ -174,9 +209,14 @@ bool WaitAndStopService::startSlaveTransfer()
 
 char WaitAndStopService::calculateBCE(const std::string &data)
 {
+    return calculateBCE((char *)data.data(), data.size());
+}
+
+char WaitAndStopService::calculateBCE(char *data, size_t dataSize)
+{
     char bce = data[0];
 
-    for (size_t i = 1; i < data.size(); i++)
+    for (size_t i = 1; i < dataSize; i++)
         bce ^= data[i];
 
     if (bce == 0 || bce == 255)
@@ -226,14 +266,18 @@ bool WaitAndStopService::serviceWrite(FrameBuilder &frame)
     {
     case ControlType::STX: {
         unsigned char dataSize = frameData[3];
-        char bce = *((char *)frameData.data() + 4 + dataSize);
+        char bce =
+            *((unsigned char *)frameData.data() + 4 + dataSize); // If shown as signed weird stuff happens.
 
-        std::cout << bce << "\t" << std::flush;
+        std::cout << int(bce) << "\t" << std::flush; // Int conversion is needed so it doesn't print characters like [ | ...
     }
     }
-
     std::cout << std::endl;
-    return m_comm->write(casted);
+
+    bool result = m_comm->write(casted);
+    casted.free(); // Free sub class information too.
+
+    return result;
 }
 
 bool WaitAndStopService::waitForReply()
@@ -297,12 +341,12 @@ std::string WaitAndStopService::serviceRead(ControlType &type)
 
         unsigned char dataSize = received[3];
         char *dataStart = (char *)received.data() + 4;
-        char bce = *((char *)received.data() + 4 + dataSize);
+        unsigned char bce = *((char *)received.data() + 4 + dataSize);
 
         std::string data = std::string(dataStart, dataSize);
-        char calculatedBce = calculateBCE(data);
+        unsigned char calculatedBce = calculateBCE(data); // Proper console format, if signed weird stuff happens.
 
-        std::cout << bce << "\t" << calculatedBce << "\t" << std::endl;
+        std::cout << int(bce) << "\t" << calculatedBce << "\t" << std::endl;
 
         if (bce != calculatedBce)
         {

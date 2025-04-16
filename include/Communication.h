@@ -100,7 +100,7 @@ class Communication
     char m_sourceMac[6];      // Buffer than contains the source mac of the destination (retrieved from the adapter)
     char m_destinationMac[6]; // Buffer that contains the destination mac (retrieved throught discoverMac())
     char m_groupNumber;       // Used to know if this packet is for us.
-    FrameType m_expectedPacketType; // Used to know what packet type the Communication is waiting for.
+    FrameType m_expectedFrameType; // Used to know what packet type the Communication is waiting for.
 };
 
 #endif // COMMUNICATION_H
