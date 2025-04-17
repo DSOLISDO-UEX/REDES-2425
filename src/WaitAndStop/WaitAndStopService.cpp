@@ -346,7 +346,7 @@ std::string WaitAndStopService::serviceRead(ControlType &type)
         std::string data = std::string(dataStart, dataSize);
         unsigned char calculatedBce = calculateBCE(data); // Proper console format, if signed weird stuff happens.
 
-        std::cout << int(bce) << "\t" << calculatedBce << "\t" << std::endl;
+        std::cout << int(bce) << "\t" << int(calculatedBce) << "\t" << std::endl;
 
         if (bce != calculatedBce)
         {
