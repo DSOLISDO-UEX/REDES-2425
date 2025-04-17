@@ -2,6 +2,7 @@
 #define WAIT_AND_STOP_FRAME_BUILDER_H
 
 #include "FrameBuilder.h"
+#include <functional>
 
 /**
  * This class represents a child of FrameBuilder, it offers functionality to build complex Frames for Wait&Stop
