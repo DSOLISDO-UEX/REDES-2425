@@ -8,16 +8,16 @@
 /**
  * A simple enumeration that contains types that can be linked to the Control field on a generic Wait&Stop Frame.
  */
-enum class ControlType : char
+enum class ControlType : unsigned char
 {
-    ACK = 06,      // Frame successfully received. Sent by dest to source.
-    ENQ = 05,      // Select slave station, sent by Master to start communication with Wait&Stop protocol.
-    EOT = 04,      // Free communication. Sent by Master.
-    NOFRAME = 100, // Return by serviceRead if there was nothing to read. Used to distinguish between erroneous frames
+    ACK = 0x06,      // Frame successfully received. Sent by dest to source.
+    ENQ = 0x05,      // Select slave station, sent by Master to start communication with Wait&Stop protocol.
+    EOT = 0x04,      // Free communication. Sent by Master.
+    NOFRAME = 0xBE, // Return by serviceRead if there was nothing to read. Used to distinguish between erroneous frames
                    // and empty reads.
-    NACK = 21,     // Ask master to resend a last frame because there was an error while receiving.
-    STX = 02,      // Data frame.
-    INVALID = 101  // Returned by serviceRead if there was any error on the frame (BCE mismatch).
+    NACK = 0x21,     // Ask master to resend a last frame because there was an error while receiving.
+    STX = 0x02,      // Data frame.
+    INVALID = 0xBB  // Returned by serviceRead if there was any error on the frame (BCE mismatch).
 };
 
 /**
